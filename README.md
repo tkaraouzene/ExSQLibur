@@ -4,21 +4,22 @@ Description: An SQLite and Perl based exome data analyser which will help you to
 
 Authors: Thomas Karaouzene
 
-### Overview
+## Overview
 ExSQLibur is a set of modul based on Perl & SQLite program that finds potential disease-causing variants from whole-exome sequencing data.
 
 Starting from a reads file and a set of phenotypes it will align and call genotypes and return vcf files.
 From these files it will annotate, filter and prioritise likely causative variants. The program does this based on user-defined criteria such as a variant's predicted pathogenicity, frequency of occurrence in a population and also how closely the given phenotype matches the known phenotype of diseased genes from human and model organism data.
 
-### Workflow
+## Workflow
 
-##### 1. Initialisation
+### 1. Initialisation
 
 ```sh 
-perl ExSQLibur NEW --project_name [your_project_name] 
+perl ExSQLibur NEW \
+  --project_name [your_project_name] 
 ```
 
-##### 2. Add data
+### 2. Add data
 
 1. firstly you have to add a new Exome project:
 
@@ -62,7 +63,17 @@ id	sex	reads_file1	reads_file2 pathology	seq_plateforme	seq_model	seq_place	seq_
 ID:0001	M	ID_0001.1.fastq.gz	ID_0001.2.fastq.gz	heart_condition Illumina	Hiseq2000	Somewhere	08/11/2013 no comment
 ```
 
+### 3. Data Alignment
 
+The installation of MAGIC is requiered for this step
+
+```
+perl ExSQLibur ADD \
+  --project_name  [your_project_name] \ 
+  --raw_data [path/to/your/files.fastq] \
+  --genome [path/to/your/genomeref/directory] \
+  --magic_source [patho/to/your/magic/source/directory]
+```
 
 
 
