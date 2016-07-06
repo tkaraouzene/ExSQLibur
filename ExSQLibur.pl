@@ -11,7 +11,7 @@ use Getopt::Long;
 # use Term::ReadKey;
 use feature qw(say);
 use File::Path qw(rmtree);
-use NEW3 qw(NEW);
+use NEW qw(NEW);
 use ALIGN qw(ALIGN);
 
 print &header;
@@ -38,7 +38,7 @@ sub main {
 
     } else {
 	
-	dieq error_mess."Unexpected mode: $config->{mode}\n".&usage;
+	dieq error_mess."Unexpected mode: $config->{mode}".&usage;
 
     }
 
