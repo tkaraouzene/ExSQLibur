@@ -18,7 +18,6 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(ALIGN);
 
-
 sub ALIGN {
 
     my $config = shift;
