@@ -21,7 +21,7 @@ perl ExSQLibur NEW \
 
 ### 2. Add data
 
-1. firstly you have to add a new Exome project:
+##### 1. firstly you have to add a new Exome project:
 
 ```sh 
 perl ExSQLibur ADD \
@@ -36,7 +36,7 @@ Illumina	Hiseq2000	Somewhere	08/11/2013  Agilent SureSelect Human All exon v5  n
 ```
 platform, model place and date fields are requiered
 
-2. secondly you have to add a new pathology:
+##### 2. secondly you have to add a new pathology:
 
 ```sh 
 perl ExSQLibur ADD \
@@ -51,7 +51,7 @@ heart_condition it hurts a lot
 ```
 name field is requiered
 
-3. finaly you can add patients to your database
+##### 3. finaly you can add patients to your database
 
 ```sh 
 perl ExSQLibur ADD \
