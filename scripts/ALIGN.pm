@@ -59,9 +59,7 @@ EOF
 	
 	dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
 	
-	dieq "log dir :: $log_dir";
-	
-    foreach my $process ("a0","ALIGN","WIGGLE","SNV") {
+	foreach my $process ("a0","ALIGN","WIGGLE","SNV") {
 	
     	my $log_file  = $log_dir."/log_".$process;
     		

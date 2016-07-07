@@ -65,7 +65,8 @@ sub ADD {
 			&insert_values($dbh,
 						   {table => $config->{table_name}->{pathology},
 							csv_file => $config->{add_pathology},
-							verbose => $config->{verbose}}) or dieq error_mess."add_pathology failed";
+							verbose => $config->{verbose}})
+							or dieq error_mess."add_pathology failed";
 		
 			&update_table_variant($dbh,$config);
 		}
