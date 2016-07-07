@@ -9,6 +9,7 @@ use feature qw(say);
 use File::Path qw(rmtree);
 use NEW qw(NEW);
 use ALIGN qw(ALIGN);
+use ADD qw(ADD);
 print &header;
 # configure from command line opts
 my $config = &configure(\@ARGV);
