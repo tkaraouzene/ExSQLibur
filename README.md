@@ -25,8 +25,7 @@ perl ExSQLibur NEW \
 
 ```sh 
 perl ExSQLibur ADD \
-  --add Exome \
-  --from_file [yourfile containing exome project info]
+  --add_exome [file containing exome project info]
 ```
 your Exome file must be tab delimited and have these header line: 
 
@@ -40,8 +39,7 @@ platform, model place and date fields are requiered
 
 ```sh 
 perl ExSQLibur ADD \
-  --add Pathology \
-  --from_file [yourfile containing pathology info]
+  --add_pathology [file containing pathology description]
 ```
 your Pathology file must also be tab delimited and have these header line:
 
@@ -55,13 +53,22 @@ name field is requiered
 
 ```sh 
 perl ExSQLibur ADD \
-  --add Patient \
-  --from_file [yourfile containing patient project info]
+  --add_patient [file containing patient info]
 ```
 ```
 id	sex	reads_file1	reads_file2 pathology	seq_plateforme	seq_model	seq_place	seq_date  comment
 ID:0001	M	ID_0001.1.fastq.gz	ID_0001.2.fastq.gz	heart_condition Illumina	Hiseq2000	Somewhere	08/11/2013 no comment
 ```
+##### 4. Other way
+
+These 3 steps can be performed in one single command 
+
+ ```
+ perl ExSQLibur ADD \
+  --add_exome [file containing exome project info] \
+  --add_exome [file containing pathology description] \
+  --add_patient [file containing patient info] \
+ ```
 
 ### 3. Data Alignment
 
