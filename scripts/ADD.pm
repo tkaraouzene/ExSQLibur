@@ -81,23 +81,27 @@ sub ADD {
 
 		if (&check_patient_header($header)) {
 		
-			my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
-			my $is_runs_ace = 0;
+			while (<$fh>) {
+	
+				chomp;
+				my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
+				my $is_runs_ace = 0;
 
-			my $exome_id = &my_select($dbh,
-									  {table => $config->{table_name}->{exome},
-									   fields => ["platform","model","place","date"],
-									   values => [$seq_platform,$seq_model,$seq_place,$seq_date],
-									   what => ["id"],
-									   operator => "AND",
-									   verbose => $config->{verbose}
-									  }) or dieq error_mess."$patient_id: no exome_id found for this patient";
+				my $exome_id = &my_select($dbh,
+										  {table => $config->{table_name}->{exome},
+										   fields => ["platform","model","place","date"],
+										   values => [$seq_platform,$seq_model,$seq_place,$seq_date],
+										   what => ["id"],
+										   operator => "AND",
+										   verbose => $config->{verbose}
+										  }) or dieq error_mess."$patient_id: no exome_id found for this patient";
 
-			&insert_values($dbh,
-						   {table => $config->{table_name}->{patient},
-							fields => ["id","sex","reads_file1","reads_file2","is_aligned","is_runs_ace","comment","pathology","exome"],
-							values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
-							verbose => $config->{verbose}});
+				&insert_values($dbh,
+							   {table => $config->{table_name}->{patient},
+								fields => ["id","sex","reads_file1","reads_file2","is_aligned","is_runs_ace","comment","pathology","exome"],
+								values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
+								verbose => $config->{verbose}});
+			}
 		}
 		
 		$add++;
