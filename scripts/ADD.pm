@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
-use my_table_functions qw(connect_database insert_values create_unique_index alter_table);
+use my_table_functions qw(connect_database insert_values create_unique_index alter_table my_select);
 use my_file_manager qw(openIN);
 use feature qw(say);
 
