@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-use lib 'mylib';
+use lib 'scripts';
 use strict;
 use warnings;
 use my_warnings qw(get_time dieq printq warnq warn_mess error_mess info_mess);
