@@ -31,8 +31,6 @@ sub ADD {
 				 verbose => 1
 				});
 
-	
-
 	if (defined $config->{add_exome}) {
 		
 		my $fh = openIN $config->{add_exome};
