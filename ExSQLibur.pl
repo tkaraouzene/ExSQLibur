@@ -229,9 +229,9 @@ sub get_option {
 		'fastc=s',                  #
 		'gff_file=s',               #
 		'magic_source=s',           # 
-		'add_exome',
-		'add_pathology',
-		'add_patient',
+		'add_exome=s',
+		'add_pathology=s',
+		'add_patient=s',
 		'force_overwrite'           # force overwrite of output file if already exists
 	) or dieq error_mess."unexpected options, type -h or --help for help";
 		
