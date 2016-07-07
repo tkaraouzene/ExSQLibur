@@ -88,8 +88,7 @@ sub configure {
 	 
 	}
 	
-	# unless ((defined $config->{project_name}) &&
-			# (defined $config->{patient_file}) &&
+	# unless ((defined $config->{patient_file}) &&
 			# (defined $config->{patho_file}) &&
 			# (defined $config->{exome_file})) {
 		
@@ -156,7 +155,9 @@ sub configure {
     }
 	
     elsif ($config->{mode} eq "ADD") {
-		
+		unless (defined $config->{project_name}) {
+		print &usage_ADD;
+	    die;
 	
 	} else {
 		dieq error_mess."Unexpected mode: $mode\n".&usage;

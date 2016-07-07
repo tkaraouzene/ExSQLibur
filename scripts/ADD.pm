@@ -8,6 +8,7 @@ use strict;
 use warnings;
 
 use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
+use my_table_functions qw(connect_database);
 use my_file_manager qw(openIN);
 use feature qw(say);
 
