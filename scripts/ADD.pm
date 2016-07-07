@@ -39,13 +39,12 @@ sub ADD {
 		
 		if (&check_exome_header($fh)) {
 		
-			# &insert_values($dbh,
-						   # {table => $config->{table_name}->{exome},
-							# csv_file => $config->{add_exome},
-							# verbose => $config->{verbose}
-							# });
-							
-		} or dieq error_mess."add_exome failed";
+			&insert_values($dbh,
+						   {table => $config->{table_name}->{exome},
+							csv_file => $config->{add_exome},
+							verbose => $config->{verbose}
+							}) or dieq error_mess."add_exome failed";
+		} 
 		
 		$add++;
 	} 
@@ -61,8 +60,8 @@ sub ADD {
 			&insert_values($dbh,
 						   {table => $config->{table_name}->{pathology},
 							csv_file => $config->{add_pathology},
-							verbose => $config->{verbose}});
-		} or dieq error_mess."add_pathology failed";
+							verbose => $config->{verbose}}) or dieq error_mess."add_pathology failed";
+		}
 		
 		$add++;
 	} 
