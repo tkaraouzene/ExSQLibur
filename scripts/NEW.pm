@@ -49,55 +49,55 @@ sub NEW {
                     from_hash => &my_call(),
                     verbose => $config->{verbose}});
 	
-	# TODO: I Have to move following insert into ADD Pathology 
-    &insert_values($dbh,
-		   {table => $config->{table_name}->{pathology},
-		    csv_file => $config->{patho_file},
-		    verbose => $config->{verbose}});
+	TODO: I Have to move following insert into ADD Pathology 
+    # &insert_values($dbh,
+		   # {table => $config->{table_name}->{pathology},
+		    # csv_file => $config->{patho_file},
+		    # verbose => $config->{verbose}});
     
-    &update_table_pathology($dbh,$config);
-    ###
+    # &update_table_pathology($dbh,$config);
+    ##
 
-	# TODO: I Have to move following insert into ADD Exome 
-    &insert_values($dbh,
-		   {table => $config->{table_name}->{exome},
-		    csv_file => $config->{exome_file},
-		    verbose => $config->{verbose}});
+	TODO: I Have to move following insert into ADD Exome 
+    # &insert_values($dbh,
+		   # {table => $config->{table_name}->{exome},
+		    # csv_file => $config->{exome_file},
+		    # verbose => $config->{verbose}});
     
-    &create_unique_index($dbh,{index_name => "ind_uni_model_place_date",
-			       table => $config->{table_name}->{exome},
-			       fields => "model,place,date"});
-    ###
+    # &create_unique_index($dbh,{index_name => "ind_uni_model_place_date",
+			       # table => $config->{table_name}->{exome},
+			       # fields => "model,place,date"});
+    ##
 	
 	
-	printq info_mess."$config->{table_name}->{patient}: retrieving data from $config->{patient_file}";
+	# printq info_mess."$config->{table_name}->{patient}: retrieving data from $config->{patient_file}";
 
-    # currently this phase is done in NEW module but will be move in a new one (ADD patient)
-    my $fh = openIN $config->{patient_file};
+    currently this phase is done in NEW module but will be move in a new one (ADD patient)
+    # my $fh = openIN $config->{patient_file};
 
-    <$fh>;
-    while (<$fh>) {
-	chomp;
+    # <$fh>;
+    # while (<$fh>) {
+	# chomp;
 
-	my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
-	my $is_runs_ace = 0;
+	# my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
+	# my $is_runs_ace = 0;
 
-	my $exome_id = &my_select($dbh,
-				  {table => $config->{table_name}->{exome},
-				   fields => ["platform","model","place","date"],
-				   values => [$seq_platform,$seq_model,$seq_place,$seq_date],
-				   what => ["id"],
-				   operator => "AND",
-				   verbose => $config->{verbose}}) or dieq error_mess."$patient_id: no exome_id found for this patient";
+	# my $exome_id = &my_select($dbh,
+				  # {table => $config->{table_name}->{exome},
+				   # fields => ["platform","model","place","date"],
+				   # values => [$seq_platform,$seq_model,$seq_place,$seq_date],
+				   # what => ["id"],
+				   # operator => "AND",
+				   # verbose => $config->{verbose}}) or dieq error_mess."$patient_id: no exome_id found for this patient";
 
-	&insert_values($dbh,
-		       {table => $config->{table_name}->{patient},
-				fields => ["id","sex","reads_file1","reads_file2","is_aligned","is_runs_ace","comment","pathology","exome"],
-				values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
-				verbose => $config->{verbose}});
-    }
+	# &insert_values($dbh,
+		       # {table => $config->{table_name}->{patient},
+				# fields => ["id","sex","reads_file1","reads_file2","is_aligned","is_runs_ace","comment","pathology","exome"],
+				# values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
+				# verbose => $config->{verbose}});
+    # }
 
-    close $fh;
+    # close $fh;
 
     $dbh->disconnect();
     

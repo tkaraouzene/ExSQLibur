@@ -15,9 +15,6 @@ my $config = &configure(\@ARGV);
 # run the main sub routine
 &main($config);
 
-
-
-
 ###############
 ############
 
@@ -76,14 +73,21 @@ sub configure {
 
     if ($config->{mode} eq "NEW") {
 	
-	unless ((defined $config->{project_name}) &&
-			(defined $config->{patient_file}) &&
-			(defined $config->{patho_file}) &&
-			(defined $config->{exome_file})) {
-		
-		print &usage_NEW;
+	unless (defined $config->{project_name}) {
+	
+	print &usage_NEW;
 	    die;
+	 
 	}
+	
+	# unless ((defined $config->{project_name}) &&
+			# (defined $config->{patient_file}) &&
+			# (defined $config->{patho_file}) &&
+			# (defined $config->{exome_file})) {
+		
+		# print &usage_NEW;
+	    # die;
+	# }
 	
 	# (defined $config->{pswd}) ?
 	# ($config->{pswd} = &get_pswd or dieq error_mess."it seems you don't remember your password") :
