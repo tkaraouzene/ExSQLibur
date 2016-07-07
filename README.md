@@ -68,7 +68,7 @@ ID:0001	M	ID_0001.1.fastq.gz	ID_0001.2.fastq.gz	heart_condition Illumina	Hiseq20
 The installation of MAGIC is requiered for this step
 
 ```
-perl ExSQLibur ADD \
+perl ExSQLibur ALIGN \
   --project_name  [your_project_name] \ 
   --raw_data [path/to/your/files.fastq] \
   --genome [path/to/your/genomeref/directory] \
