@@ -79,8 +79,12 @@ sub ADD {
 		chomp(my $header = <$fh>);
 		close $fh;
 
+		
 		if (&check_patient_header($header)) {
 		
+			my $fh2 = openIN $config->{add_patient};
+
+			<$fh>;
 			while (<$fh>) {
 	
 				chomp;
@@ -102,6 +106,8 @@ sub ADD {
 								values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
 								verbose => $config->{verbose}});
 			}
+		
+			close $fh2;
 		}
 		
 		$add++;
