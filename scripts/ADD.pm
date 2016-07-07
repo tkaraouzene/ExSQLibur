@@ -128,7 +128,7 @@ sub check_exome_header {
 	
 	} else {
 	
-		warnq warn_mess."unexpected exome header";
+		warnq warn_mess."unexpected exome header: $header";
 	
 	}
 	
@@ -146,7 +146,7 @@ sub check_pathology_header {
 	
 	} else {
 	
-		warnq warn_mess."unexpected exome header";
+		warnq warn_mess."unexpected exome header: $header";
 	
 	}
 	
