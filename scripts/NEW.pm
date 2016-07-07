@@ -72,7 +72,7 @@ sub NEW {
 	
 	# printq info_mess."$config->{table_name}->{patient}: retrieving data from $config->{patient_file}";
 
-    currently this phase is done in NEW module but will be move in a new one (ADD patient)
+   #  currently this phase is done in NEW module but will be move in a new one (ADD patient)
     # my $fh = openIN $config->{patient_file};
 
     # <$fh>;
