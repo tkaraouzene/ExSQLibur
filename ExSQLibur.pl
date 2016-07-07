@@ -14,6 +14,13 @@ print &header;
 my $config = &configure(\@ARGV);
 # run the main sub routine
 &main($config);
+
+
+
+
+###############
+############
+
 sub main {
     my $config = shift;
     printq info_mess."Starting..." unless $config->{quiet};
@@ -26,10 +33,11 @@ sub main {
     }
     printq info_mess."Finished!" unless $config->{quiet};
 }
-###############
-############
-# sets up configuration hash that is used throughout the script
+
 sub configure {
+
+	# sets up configuration hash that is used throughout the script
+	
     my @ARGV_copy = @ARGV;
     my $args = shift;
     my $mode = shift @$args || "";   
@@ -48,12 +56,19 @@ sub configure {
 	print &usage;
 	die;
     }
-    
+	
+	chomp(my $pwd = `pwd`);
+
 	$config->{project_name} =~ s/\/$//;
     $config->{db_dir} = $config->{project_name}."/DB";
     $config->{db} = $config->{db_dir}."/".$config->{project_name};
     $config->{db_file} = $config->{db}.".db";
     $config->{align_dir} = $config->{project_name}."/Align_data";
+	$config->{data_dir} = $pwd."/data";	
+	$config->{scripts_dir} = $pwd."/scripts";	
+
+	dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
+	dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	
 
 	define_table($config);
 
@@ -103,8 +118,6 @@ sub configure {
 			die;
 		}
 		
-	chomp(my $pwd = `pwd`);
-
 	$config->{fastc_dir} = $config->{align_dir}."/Fastc";
 	$config->{fastq_dir} = $config->{align_dir}."/Fastq";
 	$config->{target_dir} = $config->{align_dir}."/TARGET";
@@ -117,18 +130,8 @@ sub configure {
 	dieq error_mess."cannot mkdir $config->{tmp_dir}: $!" unless -d $config->{tmp_align_dir} || mkdir $config->{tmp_align_dir};
 	dieq error_mess."cannot mkdir $config->{align_log_dir}: $!" unless -d $config->{align_log_dir} || mkdir $config->{align_log_dir};
 	dieq error_mess."cannot symlink $config->{raw_data}: $!" unless -d $config->{fastq_dir} || symlink $pwd."/".$config->{raw_data}, $config->{fastq_dir};
-
-	
 	dieq error_mess."no genome directory defined, you need to define it at least the first time" unless -d $config->{target_dir} || defined $config->{genome};
-	
-	
-	
-	
-	
-
-
-
-		dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
+	dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
 	
 	if ($config->{fastc}) {
 	    dieq error_mess."cannot symlink $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || symlink $pwd."/".$config->{fastc}, $config->{fastc_dir};
@@ -137,11 +140,14 @@ sub configure {
 	}
 	$ENV{MAGIC_SRC} = $config->{magic_source};
     }
+	
     else {
 	dieq error_mess."Unexpected mode: $mode\n".&usage;
     }
-    return $config;
+   
+   return $config;
 }
+
 # sub get_pswd {
 #     my $pswd;
 #     my @try = (1..3);
