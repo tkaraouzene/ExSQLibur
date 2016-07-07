@@ -49,7 +49,7 @@ sub NEW {
                     from_hash => &my_call(),
                     verbose => $config->{verbose}});
 	
-	TODO: I Have to move following insert into ADD Pathology 
+	#TODO: I Have to move following insert into ADD Pathology 
     # &insert_values($dbh,
 		   # {table => $config->{table_name}->{pathology},
 		    # csv_file => $config->{patho_file},
@@ -58,7 +58,7 @@ sub NEW {
     # &update_table_pathology($dbh,$config);
     ##
 
-	TODO: I Have to move following insert into ADD Exome 
+	#TODO: I Have to move following insert into ADD Exome 
     # &insert_values($dbh,
 		   # {table => $config->{table_name}->{exome},
 		    # csv_file => $config->{exome_file},
