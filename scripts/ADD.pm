@@ -18,11 +18,11 @@ our @EXPORT_OK = qw(ADD);
 
 sub ADD {
 
-
     my $config = shift;
     my $status = 1;
 	my $add;
-    printq info_mess."Starting..." if $config->{verbose};
+   
+	printq info_mess."Starting..." if $config->{verbose};
 
 	if (defined $config->{add_exome}) {
 		
@@ -41,7 +41,7 @@ sub ADD {
 		$add++;
 	} 
 	
-	if (defined config->{add_pathology}) {
+	if (defined $config->{add_pathology}) {
 	
 		my $fh = openIN $config->{add_pathology};
 		my $header = <$fh>;

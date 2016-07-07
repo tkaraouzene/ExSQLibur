@@ -22,14 +22,21 @@ my $config = &configure(\@ARGV);
 sub main {
     my $config = shift;
     printq info_mess."Starting..." unless $config->{quiet};
-    if ($config->{mode} eq "NEW") {
-	&NEW($config);
-    } elsif ($config->{mode} eq "ALIGN") {
-	&ALIGN($config);
-    }  elsif ($config->{mode} eq "ADD") {
-	&ADD($config);
+    
+	if ($config->{mode} eq "NEW") {
+		
+		&NEW($config);
+    
+	} elsif ($config->{mode} eq "ALIGN") {
+		
+		&ALIGN($config);
+    
+	}  elsif ($config->{mode} eq "ADD") {
+	
+		&ADD($config);
+	
 	} else {
-	dieq error_mess."Unexpected mode: $config->{mode}".&usage;
+		dieq error_mess."Unexpected mode: $config->{mode}".&usage;
     }
     printq info_mess."Finished!" unless $config->{quiet};
 }
