@@ -54,6 +54,7 @@ sub configure {
     $config->{db} = $config->{db_dir}."/".$config->{project_name};
     $config->{db_file} = $config->{db}.".db";
     $config->{align_dir} = $config->{project_name}."/Align_data";
+
 	define_table($config);
 
     if ($config->{mode} eq "NEW") {
@@ -97,19 +98,18 @@ sub configure {
 	
 		unless ((defined $config->{project_name}) &&
 			(defined $config->{raw_data}) &&
-			(defined $config->{genome}) &&
 			(defined $config->{magic_source})) {
 			print &usage_ALIGN;
 			die;
 		}
 		
 	chomp(my $pwd = `pwd`);
-	
+
 	$config->{fastc_dir} = $config->{align_dir}."/Fastc";
+	$config->{fastq_dir} = $config->{align_dir}."/Fastq";
 	$config->{target_dir} = $config->{align_dir}."/TARGET";
 	$config->{tmp_align_dir} = $config->{align_dir}."/_tmp";
 	$config->{align_log_dir} = $config->{align_dir}."/Log_files";
-	$config->{fastq_dir} = $config->{align_dir}."/Fastq";
     $config->{runs_ace_file} = $config->{align_dir}."/runs.ace";
 	
 	dieq error_mess."cannot find db file: $config->{db_file}" unless -e $config->{db_file};
@@ -117,7 +117,18 @@ sub configure {
 	dieq error_mess."cannot mkdir $config->{tmp_dir}: $!" unless -d $config->{tmp_align_dir} || mkdir $config->{tmp_align_dir};
 	dieq error_mess."cannot mkdir $config->{align_log_dir}: $!" unless -d $config->{align_log_dir} || mkdir $config->{align_log_dir};
 	dieq error_mess."cannot symlink $config->{raw_data}: $!" unless -d $config->{fastq_dir} || symlink $pwd."/".$config->{raw_data}, $config->{fastq_dir};
-	dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
+
+	
+	dieq error_mess."no genome directory defined, you need to define it at least the first time" unless -d $config->{target_dir} || defined $config->{genome};
+	
+	
+	
+	
+	
+
+
+
+		dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
 	
 	if ($config->{fastc}) {
 	    dieq error_mess."cannot symlink $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || symlink $pwd."/".$config->{fastc}, $config->{fastc_dir};
