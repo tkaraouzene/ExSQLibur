@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
-use my_table_functions qw(connect_database insert_values);
+use my_table_functions qw(connect_database insert_values create_unique_index);
 use my_file_manager qw(openIN);
 use feature qw(say);
 
@@ -45,6 +45,10 @@ sub ADD {
 							csv_file => $config->{add_exome},
 							verbose => $config->{verbose}
 							}) or dieq error_mess."add_exome failed";
+							
+		    &create_unique_index($dbh,{index_name => "ind_uni_model_place_date",
+			       table => $config->{table_name}->{exome},
+			       fields => "model,place,date"});
 		} 
 		
 		$add++;
@@ -62,6 +66,8 @@ sub ADD {
 						   {table => $config->{table_name}->{pathology},
 							csv_file => $config->{add_pathology},
 							verbose => $config->{verbose}}) or dieq error_mess."add_pathology failed";
+		
+			&update_table_variant($dbh,$config);
 		}
 		
 		$add++;
@@ -172,4 +178,51 @@ sub check_patient_header {
 	return $status;
 }
 
+sub update_table_variant {
+
+    my ($dbh,$config) = @_;
+    
+    printq info_mess."Start..." if $config->{verbose};
+    
+    my $stmt = qq(SELECT name FROM $config->{table_name}->{pathology}
+                  WHERE is_added IS NULL
+                  ;);
+
+    my $sth = $dbh->prepare($stmt);
+    my $rv = $sth->execute() or die $DBI::errstr;
+
+    while (my $row = $sth->fetchrow_arrayref()) {
+
+        my $patho_name = $row->[0];
+
+		printq info_mess."$patho_name: Start..." if $config->{verbose};
+
+        my $new_columns = {
+            "nb_ref_".$patho_name => "INT UNSIGNED",
+			"nb_het_".$patho_name => "INT UNSIGNED",
+			"nb_homo_".$patho_name => "INT UNSIGNED",
+			"maf_".$patho_name => "DECIMAL(1,5)"
+        };
+
+        # TK: 04/07/2016
+        # TODO:
+        # for now it add new columns in a random order
+        # need to fix that soon
+		&alter_table($dbh,{table => $config->{table_name}->{variant},
+			   action => "ADD",
+			   col_name => $_,
+			   col_type => $new_columns->{$_}}) foreach keys %$new_columns;
+	
+		$stmt = qq(UPDATE $config->{table_name}->{pathology}
+        		   SET is_added = 1 
+				   WHERE name = \"$patho_name\";);
+
+        $dbh->do($stmt) or die $DBI::errstr;
+		printq info_mess."$patho_name: Finished" if $config->{verbose};
+    }
+
+    printq info_mess."Finished" if $config->{verbose};
+    
+    return 1;
+}
 
