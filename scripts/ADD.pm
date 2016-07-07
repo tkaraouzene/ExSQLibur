@@ -23,6 +23,15 @@ sub ADD {
 	my $add;
    
 	printq info_mess."Starting..." if $config->{verbose};
+	
+	    my $dbh = &connect_database({driver => "SQLite",
+				 db => $config->{db_file},
+				 user => $config->{user},
+				 pswd => $config->{password},
+				 verbose => 1
+				});
+
+	
 
 	if (defined $config->{add_exome}) {
 		
@@ -36,6 +45,7 @@ sub ADD {
 						   {table => $config->{table_name}->{exome},
 							csv_file => $config->{add_exome},
 							verbose => $config->{verbose}});
+							
 		} or dieq error_mess."add_exome failed";
 		
 		$add++;
@@ -96,6 +106,8 @@ sub ADD {
 	
 		warnq warn_mess."Nothing to add, you should specify one of: --add_exome, --add_pathology or --add_patient";
 	}
+
+	$dbh->disconnect();
 
     printq info_mess."Finished!" if $config->{verbose};
 
