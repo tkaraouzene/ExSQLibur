@@ -49,56 +49,6 @@ sub NEW {
                     from_hash => &my_call(),
                     verbose => $config->{verbose}});
 	
-	#TODO: I Have to move following insert into ADD Pathology 
-    # &insert_values($dbh,
-		   # {table => $config->{table_name}->{pathology},
-		    # csv_file => $config->{patho_file},
-		    # verbose => $config->{verbose}});
-    
-    # &update_table_pathology($dbh,$config);
-    ##
-
-	#TODO: I Have to move following insert into ADD Exome 
-    # &insert_values($dbh,
-		   # {table => $config->{table_name}->{exome},
-		    # csv_file => $config->{exome_file},
-		    # verbose => $config->{verbose}});
-    
-    # &create_unique_index($dbh,{index_name => "ind_uni_model_place_date",
-			       # table => $config->{table_name}->{exome},
-			       # fields => "model,place,date"});
-    ##
-	
-	
-	# printq info_mess."$config->{table_name}->{patient}: retrieving data from $config->{patient_file}";
-
-   #  currently this phase is done in NEW module but will be move in a new one (ADD patient)
-    # my $fh = openIN $config->{patient_file};
-
-    # <$fh>;
-    # while (<$fh>) {
-	# chomp;
-
-	# my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
-	# my $is_runs_ace = 0;
-
-	# my $exome_id = &my_select($dbh,
-				  # {table => $config->{table_name}->{exome},
-				   # fields => ["platform","model","place","date"],
-				   # values => [$seq_platform,$seq_model,$seq_place,$seq_date],
-				   # what => ["id"],
-				   # operator => "AND",
-				   # verbose => $config->{verbose}}) or dieq error_mess."$patient_id: no exome_id found for this patient";
-
-	# &insert_values($dbh,
-		       # {table => $config->{table_name}->{patient},
-				# fields => ["id","sex","reads_file1","reads_file2","is_aligned","is_runs_ace","comment","pathology","exome"],
-				# values => [$patient_id,$sex,$f1,$f2,$is_aligned,$is_runs_ace,$comment,$patho,$exome_id],
-				# verbose => $config->{verbose}});
-    # }
-
-    # close $fh;
-
     $dbh->disconnect();
     
     printq info_mess."Finished!" if $config->{verbose};
@@ -287,56 +237,6 @@ sub init_table {
 	printq info_mess."end" if $config->{verbose}; 
 
 	return 1;
-}
-
-sub update_table_pathology {
-
-    my ($dbh,$config) = @_;
-    
-    printq info_mess."Start..." if $config->{verbose};
-    
-    my $stmt = qq(SELECT name FROM $config->{table_name}->{pathology}
-                  WHERE is_added IS NULL
-                  ;);
-
-
-    my $sth = $dbh->prepare($stmt);
-    my $rv = $sth->execute() or die $DBI::errstr;
-
-
-    while (my $row = $sth->fetchrow_arrayref()) {
-
-        my $patho_name = $row->[0];
-
-	printq info_mess."$patho_name: Start..." if $config->{verbose};
-
-        my $new_columns = {
-            "nb_ref_".$patho_name => "INT UNSIGNED",
-	    "nb_het_".$patho_name => "INT UNSIGNED",
-	    "nb_homo_".$patho_name => "INT UNSIGNED",
-	    "maf_".$patho_name => "DECIMAL(1,5)"
-        };
-
-        # TK: 04/07/2016
-        # TODO:
-        # for now it add new columns in a random order
-        # need to fix that soon
-	&alter_table($dbh,{table => $config->{table_name}->{variant},
-			   action => "ADD",
-			   col_name => $_,
-			   col_type => $new_columns->{$_}}) foreach keys %$new_columns;
-
-	
-	$stmt = qq(UPDATE $config->{table_name}->{pathology} SET is_added = 1
-                   WHERE name = \"$patho_name\";);
-
-        $dbh->do($stmt) or die $DBI::errstr;
-	printq info_mess."$patho_name: Finished" if $config->{verbose};
-    }
-
-    printq info_mess."Finished" if $config->{verbose};
-    
-    return 1;
 }
 
 sub my_call {
