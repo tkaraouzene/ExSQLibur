@@ -28,7 +28,9 @@ sub main {
 	&NEW($config);
     } elsif ($config->{mode} eq "ALIGN") {
 	&ALIGN($config);
-    } else {
+    }  elsif ($config->{mode} eq "ADD") {
+	&ADD($config);
+	} else {
 	dieq error_mess."Unexpected mode: $config->{mode}".&usage;
     }
     printq info_mess."Finished!" unless $config->{quiet};
