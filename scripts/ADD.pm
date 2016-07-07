@@ -35,7 +35,7 @@ sub ADD {
 	if (defined $config->{add_exome}) {
 		
 		my $fh = openIN $config->{add_exome};
-		my $header = <$fh>;
+		chomp(my $header = <$fh>);
 		close $fh;
 		
 		if (&check_exome_header($fh)) {
@@ -53,7 +53,7 @@ sub ADD {
 	if (defined $config->{add_pathology}) {
 	
 		my $fh = openIN $config->{add_pathology};
-		my $header = <$fh>;
+		chomp(my $header = <$fh>);
 		close $fh;
 
 		if (&check_pathology_header($fh)) {
@@ -70,7 +70,7 @@ sub ADD {
 	if (defined $config->{add_patient}) {
 	
 		my $fh = openIN $config->{add_patient};
-		my $header = <$fh>;
+		chomp(my $header = <$fh>);
 		close $fh;
 
 		if (&check_patient_header($fh)) {
