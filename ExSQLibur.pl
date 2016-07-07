@@ -93,9 +93,9 @@ sub configure {
 	# ($config->{pswd} = &get_pswd or dieq error_mess."it seems you don't remember your password") :
 	# ($config->{pswd} = &ask_pswd or warnq warn_mess."ok no password");
 	
-	dieq error_mess."Cannot find --patient_file $config->{patient_file}" unless -e $config->{patient_file};
-	dieq error_mess."Cannot find --patho_file $config->{patho_file}" unless -e $config->{patho_file};
-	dieq error_mess."Cannot find --exome_file $config->{exome_file}" unless -e $config->{exome_file};
+	# dieq error_mess."Cannot find --patient_file $config->{patient_file}" unless -e $config->{patient_file};
+	# dieq error_mess."Cannot find --patho_file $config->{patho_file}" unless -e $config->{patho_file};
+	# dieq error_mess."Cannot find --exome_file $config->{exome_file}" unless -e $config->{exome_file};
 	
 	if (-d $config->{project_name}) {
 	
