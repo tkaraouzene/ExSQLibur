@@ -84,8 +84,8 @@ sub ADD {
 		
 			my $fh2 = openIN $config->{add_patient};
 
-			<$fh>;
-			while (<$fh>) {
+			<$fh2>;
+			while (<$fh2>) {
 	
 				chomp;
 				my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
