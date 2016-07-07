@@ -147,8 +147,11 @@ sub configure {
 	$ENV{MAGIC_SRC} = $config->{magic_source};
     }
 	
-    else {
-	dieq error_mess."Unexpected mode: $mode\n".&usage;
+    elsif ($config->{mode} eq "ADD") {
+		
+	
+	} else {
+		dieq error_mess."Unexpected mode: $mode\n".&usage;
     }
    
    return $config;
