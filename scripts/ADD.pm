@@ -38,7 +38,7 @@ sub ADD {
 		chomp(my $header = <$fh>);
 		close $fh;
 		
-		if (&check_exome_header($fh)) {
+		if (&check_exome_header($header)) {
 		
 			&insert_values($dbh,
 						   {table => $config->{table_name}->{exome},
@@ -56,7 +56,7 @@ sub ADD {
 		chomp(my $header = <$fh>);
 		close $fh;
 
-		if (&check_pathology_header($fh)) {
+		if (&check_pathology_header($header)) {
 
 			&insert_values($dbh,
 						   {table => $config->{table_name}->{pathology},
@@ -73,7 +73,7 @@ sub ADD {
 		chomp(my $header = <$fh>);
 		close $fh;
 
-		if (&check_patient_header($fh)) {
+		if (&check_patient_header($header)) {
 		
 			my ($patient_id,$sex,$f1,$f2,$is_aligned,$comment,$patho,$seq_platform,$seq_model,$seq_place,$seq_date) = split /\t/;
 			my $is_runs_ace = 0;
