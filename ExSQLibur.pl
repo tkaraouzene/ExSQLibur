@@ -156,9 +156,9 @@ sub configure {
 	
     elsif ($config->{mode} eq "ADD") {
 		unless (defined $config->{project_name}) {
-		print &usage_ADD;
-	    die;
-	
+			print &usage_ADD;
+			die;
+		}
 	} else {
 		dieq error_mess."Unexpected mode: $mode\n".&usage;
     }
