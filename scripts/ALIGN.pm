@@ -9,7 +9,7 @@ use warnings;
 
 use DBI;
 use File::Basename;
-use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
+use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess get_day);
 use feature qw(say);
 use my_table_functions qw(connect_database);
 use my_file_manager qw(openOUT);
@@ -35,8 +35,8 @@ sub ALIGN {
     &update_runs_ace($config,$dbh);
     
     chdir $config->{align_dir};
-
-    &init_align($config) unless -d $config->{align_dir}."/MetaDB";
+	
+	&init_align($config) unless -d $config->{align_dir}."/MetaDB";
 
     my $tbly = qq(./tbly MetaDB <<EOF
 parse runs.ace
@@ -47,16 +47,41 @@ EOF
 
     $ENV{MAGIC} = $config->{project_name};
     `$tbly`;
-    
+
     my $fh = openOUT "LIMITS", {mode => ">>"};
 
     say $fh "setenv targets \"mito genome\"";
-    close $fh;
 
+    close $fh;
+	
+	my $day = get_day();
+	my $log_dir = dirname $config->{align_log_dir}."/".$day;
+	
+	dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
+	
+	dieq "log dir :: $log_dir";
+	
     foreach my $process ("a0","ALIGN","WIGGLE","SNV") {
 	
-    	my $log_file  ="log_$process".".log";
-    	my $cmd = "./MAGIC";
+    	my $log_file  = $log_dir."/log_".$process;
+    		
+		if (-e $log_file) {
+		
+			my $i = 0;
+			my $lf = $log_file;
+			
+			while (-e $lf) {
+		
+				$i++;
+				$lf = $log_file."_".$i;
+			}
+			
+			$log_file = $lf;
+		}
+		
+		$log_file .= ".log";
+		
+		my $cmd = "./MAGIC";
     	$cmd .= " ".$process;
     	$cmd .= " &>".$log_file;
     	printq info_mess."$cmd start";

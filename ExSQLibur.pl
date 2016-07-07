@@ -66,44 +66,59 @@ sub configure {
 		print &usage_NEW;
 	    die;
 	}
+	
 	# (defined $config->{pswd}) ?
 	# ($config->{pswd} = &get_pswd or dieq error_mess."it seems you don't remember your password") :
 	# ($config->{pswd} = &ask_pswd or warnq warn_mess."ok no password");
+	
 	dieq error_mess."Cannot find --patient_file $config->{patient_file}" unless -e $config->{patient_file};
 	dieq error_mess."Cannot find --patho_file $config->{patho_file}" unless -e $config->{patho_file};
 	dieq error_mess."Cannot find --exome_file $config->{exome_file}" unless -e $config->{exome_file};
+	
 	if (-d $config->{project_name}) {
+	
 	    if (defined $config->{force_overwrite}) {
-		rmtree $config->{project_name} or dieq error_mess."cannot remove the directory: $config->{project_name}: $!";
-		printq info_mess."$config->{project_name} removed successffully" if defined $config->{verbose};
-	    } else {
+	
+			rmtree $config->{project_name} or dieq error_mess."cannot remove the directory: $config->{project_name}: $!";
+			printq info_mess."$config->{project_name} removed successffully" if defined $config->{verbose};
+	    
+		} else {
+		
 		dieq error_mess."$config->{project_name} already exists. Choose an other directory or use the command --force_overwrite";
 	    }
 	} 
+	
 	dieq error_mess."cannot create the directory: $config->{project_name}: $!" unless mkdir $config->{project_name};
 	dieq error_mess."cannot create the directory: $config->{db_dir}: $!" unless mkdir $config->{db_dir};
-    } 
-    elsif ($config->{mode} eq "ALIGN") {
-	unless ((defined $config->{project_name}) &&
-		(defined $config->{raw_data}) &&
-		(defined $config->{genome}) &&
-		(defined $config->{magic_source})) {
-	    print &usage_ALIGN;
-	    die;
-	}
+    
+	} 
+    
+	elsif ($config->{mode} eq "ALIGN") {
+	
+		unless ((defined $config->{project_name}) &&
+			(defined $config->{raw_data}) &&
+			(defined $config->{genome}) &&
+			(defined $config->{magic_source})) {
+			print &usage_ALIGN;
+			die;
+		}
+		
 	chomp(my $pwd = `pwd`);
+	
 	$config->{fastc_dir} = $config->{align_dir}."/Fastc";
 	$config->{target_dir} = $config->{align_dir}."/TARGET";
 	$config->{tmp_align_dir} = $config->{align_dir}."/_tmp";
-	$config->{tmp_log_dir} = $config->{align_dir}."/Log_files";
+	$config->{align_log_dir} = $config->{align_dir}."/Log_files";
 	$config->{fastq_dir} = $config->{align_dir}."/Fastq";
     $config->{runs_ace_file} = $config->{align_dir}."/runs.ace";
+	
 	dieq error_mess."cannot find db file: $config->{db_file}" unless -e $config->{db_file};
 	dieq error_mess."cannot mkdir $config->{align_dir}: $!" unless -d $config->{align_dir} || mkdir $config->{align_dir};
 	dieq error_mess."cannot mkdir $config->{tmp_dir}: $!" unless -d $config->{tmp_align_dir} || mkdir $config->{tmp_align_dir};
-	dieq error_mess."cannot mkdir $config->{tmp_log_dir}: $!" unless -d $config->{tmp_log_dir} || mkdir $config->{tmp_log_dir};
+	dieq error_mess."cannot mkdir $config->{align_log_dir}: $!" unless -d $config->{align_log_dir} || mkdir $config->{align_log_dir};
 	dieq error_mess."cannot symlink $config->{raw_data}: $!" unless -d $config->{fastq_dir} || symlink $pwd."/".$config->{raw_data}, $config->{fastq_dir};
 	dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
+	
 	if ($config->{fastc}) {
 	    dieq error_mess."cannot symlink $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || symlink $pwd."/".$config->{fastc}, $config->{fastc_dir};
 	} else {
