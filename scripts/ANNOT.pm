@@ -112,12 +112,12 @@ sub annot_vep {
 	$cmd .= "--vcf ";
 	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
-	$cmd .= "--stats_file $log_dir/stat.html",
+	$cmd .= "--stats_file $log_dir/stat.html ",
 	$cmd .= "--cache";
 
 	my $log_fh = openOUT $log_file;
 	say  $log_fh info_mess."$nb_tot new variants need to be annotated by VEP";
-	say $log_fh info_mess $cmd;	
+	say $log_fh info_mess.$cmd;	
 	
 	printq info_mess."VEP &>$log_file Start..." if defined $config->{verbose}; 
 	`$cmd &>>$log_file`;
