@@ -118,6 +118,7 @@ sub annot_vep {
 			   done => $nb_done,
 			   tot => $nb_tot,
 			   remains => scalar @ids,
+			   verbose = $config->{verbose},
 			   scale => 15000
 			  });
 
