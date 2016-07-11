@@ -114,7 +114,8 @@ sub annot_vep {
 	    # 	$dbh->begin_work();
 	    # }
 
-	    &begin_commit({done => $nb_done,
+	    &begin_commit({dbh => $dbh,
+			   done => $nb_done,
 			   tot => $nb_tot,
 			   remains => scalar @ids,
 			   scale => 15000
