@@ -112,7 +112,7 @@ sub annot_vep {
 	$cmd .= "--vcf ";
 	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
-	$cmd .= "--stat_file $log_dir/stat.html",
+	$cmd .= "--stats_file $log_dir/stat.html",
 	$cmd .= "--cache";
 
 	my $log_fh = openOUT $log_file;
