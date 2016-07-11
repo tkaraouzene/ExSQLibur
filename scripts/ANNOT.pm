@@ -7,7 +7,7 @@ use lib 'scripts';
 use strict;
 use warnings;
 
-use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
+use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess get_day);
 use my_table_functions qw(connect_database insert_values create_unique_index alter_table my_select begin_commit);
 use my_vep_functions qw(parse_vep_meta_line parse_vep_info fill_vep_table check_vep_allele);
 use my_vcf_functions qw(skip_vcf_meta is_indel parse_vcf_line parse_vcf_info);
