@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+
+package ANNOT;
+
+use lib 'scripts';
+
+use strict;
+use warnings;
+
+use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
+use my_table_functions qw(connect_database insert_values create_unique_index alter_table my_select);
+use my_file_manager qw(openIN);
+use feature qw(say);
+
+require Exporter;
+
+our @ISA = qw(Exporter);
+our @EXPORT_OK = qw(ANNOT);
+
+sub ANNOT {
+
+    my $config = shift;
+    my $status = 1;
+
+
+    printq info_mess."Starting..." if $config->{verbose};
+    
+    my $dbh = &connect_database({driver => "SQLite",
+				 db => $config->{db_file},
+				 user => $config->{user},
+				 pswd => $config->{password},
+				 verbose => 1
+				});
+
+    
+
+    
+
+
+
+
+
+
+
+    $dbh->disconnect();
+
+    printq info_mess."Finished!" if $config->{verbose};
+
+    return $status;
+}

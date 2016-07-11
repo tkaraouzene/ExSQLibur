@@ -30,28 +30,28 @@ sub NEW {
 				});
 
     &init_table($config,$dbh);
-
-    $dbh->begin_work();
-
+    
     &insert_values($dbh,
 		   {table => $config->{table_name}->{vep_impact},
 		    fields => ["impact","comment"],
 		    from_hash => &vep_impact(),
-		    verbose => $config->{verbose}});
+		    verbose => $config->{verbose},
+		    begin_commit => 1});
 
     &insert_values($dbh,
                    {table => $config->{table_name}->{vep_csq},
                     fields => ["consequence","comment","so_accession","display_term","impact"],
                     from_hash => &vep_csq(),
-                    verbose => $config->{verbose}});
+                    verbose => $config->{verbose},
+		    begin_commit => 1});
 
     &insert_values($dbh,
-                   {table => $config->{table_name}->{call},
-                    fields => ["id","name","strand"],
-                    from_hash => &my_call(),
-                    verbose => $config->{verbose}});
-
-    $dbh->commit();
+	       {table => $config->{table_name}->{call},
+		fields => ["id","name","strand"],
+		from_hash => &my_call(),
+		verbose => $config->{verbose},
+		begin_commit => 1});
+    
     $dbh->disconnect();
     
     printq info_mess."Finished!" if $config->{verbose};

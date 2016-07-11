@@ -13,7 +13,7 @@ use my_file_manager qw(openIN);
 require Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(connect_database create_table insert_values drop_table create_unique_index my_select alter_table update_table);
+our @EXPORT_OK = qw(connect_database create_table insert_values drop_table create_unique_index my_select alter_table update_table begin_commit);
 
 sub connect_database {
 
@@ -205,18 +205,61 @@ sub insert_values {
     }
     
     my $f = join ",", @{$args->{fields}};
+    
+    my $nb_done = 0;
+    my $nb_tot = @{$args->{all_values}};
 
-    foreach my $values (@{$args->{all_values}}) {
+    while (my $values = shift @{$args->{all_values}}) {
+	
+	&begin_commit({dbh => $dbh,
+		       done => $nb_done,
+		       tot => $nb_tot,
+		       remains => scalar @{$args->{all_values}},
+		       scale => 500,
+		       verbose => $args->{verbose},
+		      }) if defined $args->{begin_commit};
 	
 	@$values = map {"'$_'"} @$values;
     	my $v = join ",", @$values;
 	my $stmt = qq(INSERT INTO $args->{table} ($f) VALUES ($v));   
    	my $rv = $dbh->do($stmt) or dieq error_mess.$DBI::errstr;
-
+	$nb_done++;
     }
+
+    $dbh->commit() if defined $args->{begin_commit};
+
     return 1;
 }
 
+sub begin_commit {
+
+    my $args = shift;
+
+    dieq error_mess."dbh must be specify" unless defined $args->{dbh};
+    dieq error_mess."nb done must be specify" unless defined $args->{done};
+
+    $args->{scale} ||= 500;
+
+    my $dbh = $args->{dbh};
+
+    if ($args->{done} % $args->{scale} == 0) {
+	
+	unless ($args->{done} == 0) {
+	 
+	    $dbh->commit() unless $args->{done} == 0;
+	    
+	    my $mess = $args->{done};
+	    $mess .= " / ".$args->{tot} if defined $args->{tot};
+	    $mess .= " done";
+	    $mess .= " $args->{remains} remaining" if defined $args->{remains};
+	
+	    printq info_mess.$mess if defined $args->{verbose}; 
+	}
+	$dbh->begin_work();
+    }
+
+    return 1;
+}
 
 sub create_unique_index {
 
