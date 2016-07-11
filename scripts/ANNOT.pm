@@ -90,6 +90,7 @@ sub annot_vep {
 	$cmd .= "--db_version 75 ";
 	$cmd .= "--fork $config->{fork} " if defined $config->{fork};
 	$cmd .= "--vcf ";
+	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
 	$cmd .= "--cache";
 
