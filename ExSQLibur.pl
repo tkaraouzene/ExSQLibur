@@ -10,6 +10,9 @@ use File::Path qw(rmtree);
 use NEW qw(NEW);
 use ALIGN qw(ALIGN);
 use ADD qw(ADD);
+use CALL qw(CALL);
+use ANNOT qw(ANNOT);
+
 print &header;
 # configure from command line opts
 my $config = &configure(\@ARGV);
@@ -25,19 +28,29 @@ sub main {
     
 	if ($config->{mode} eq "NEW") {
 		
-		&NEW($config);
+	    &NEW($config);
     
 	} elsif ($config->{mode} eq "ALIGN") {
 		
-		&ALIGN($config);
+	    &ALIGN($config);
     
 	}  elsif ($config->{mode} eq "ADD") {
 	
-		&ADD($config);
+	    &ADD($config);
+	
+	}  elsif ($config->{mode} eq "CALL") {
+	    
+	    &CALL($config);
+	
+	}  elsif ($config->{mode} eq "ANNOT") {
+	    
+	    &ANNOT($config);
 	
 	} else {
-		dieq error_mess."Unexpected mode: $config->{mode}".&usage;
-    }
+	
+	    dieq error_mess."Unexpected mode: $config->{mode}".&usage;
+	}
+    
     printq info_mess."Finished!" unless $config->{quiet};
 }
 
@@ -47,15 +60,14 @@ sub configure {
 	
     my @ARGV_copy = @ARGV;
     my $args = shift;
-    my $mode = shift @$args || "";   
+    my $mode = shift @$args;   
     my $config = {};
     
-	$config->{mode} = $mode;
+    $config->{mode} = $mode;
 	
-	get_option($config);
+    get_option($config);
 	
-    unless ((defined $config->{mode}) || 
-	    ($config->{mode} ne "NEW")) {	
+    unless (defined $config->{mode}) {	
 	print &usage;
 	die;
     }
@@ -63,21 +75,20 @@ sub configure {
 	print &usage;
 	die;
     }
-	
-	chomp(my $pwd = `pwd`);
-
-	$config->{project_name} =~ s/\/$//;
+    
+    chomp(my $pwd = `pwd`);
+    $config->{project_name} =~ s/\/$//;
     $config->{db_dir} = $config->{project_name}."/DB";
     $config->{db} = $config->{db_dir}."/".$config->{project_name};
     $config->{db_file} = $config->{db}.".db";
     $config->{align_dir} = $config->{project_name}."/Align_data";
-	$config->{data_dir} = $pwd."/data";	
-	$config->{scripts_dir} = $pwd."/scripts";	
+    $config->{data_dir} = $pwd."/data";	
+    $config->{scripts_dir} = $pwd."/scripts";	
 
-	dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
-	dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	
+    dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
+    dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	
 
-	define_table($config);
+    define_table($config);
 
     if ($config->{mode} eq "NEW") {
 	
@@ -120,46 +131,67 @@ sub configure {
     
 	elsif ($config->{mode} eq "ALIGN") {
 	
-		unless ((defined $config->{project_name}) &&
-				(defined $config->{raw_data}) &&
-				(defined $config->{magic_source})) {
-			print &usage_ALIGN;
-			die;
-		}
-		
-	$config->{fastc_dir} = $config->{align_dir}."/Fastc";
-	$config->{fastq_dir} = $config->{align_dir}."/Fastq";
-	$config->{target_dir} = $config->{align_dir}."/TARGET";
-	$config->{tmp_align_dir} = $config->{align_dir}."/_tmp";
-	$config->{align_log_dir} = $config->{align_dir}."/Log_files";
-    $config->{runs_ace_file} = $config->{align_dir}."/runs.ace";
-	
-	dieq error_mess."cannot find db file: $config->{db_file}" unless -e $config->{db_file};
-	dieq error_mess."cannot mkdir $config->{align_dir}: $!" unless -d $config->{align_dir} || mkdir $config->{align_dir};
-	dieq error_mess."cannot mkdir $config->{tmp_dir}: $!" unless -d $config->{tmp_align_dir} || mkdir $config->{tmp_align_dir};
-	dieq error_mess."cannot mkdir $config->{align_log_dir}: $!" unless -d $config->{align_log_dir} || mkdir $config->{align_log_dir};
-	dieq error_mess."cannot symlink $config->{raw_data}: $!" unless -d $config->{fastq_dir} || symlink $pwd."/".$config->{raw_data}, $config->{fastq_dir};
-	dieq error_mess."no genome directory defined, you need to define it at least the first time" unless -d $config->{target_dir} || defined $config->{genome};
-	dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
-	
-	if ($config->{fastc}) {
-	    dieq error_mess."cannot symlink $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || symlink $pwd."/".$config->{fastc}, $config->{fastc_dir};
-	} else {
-	    dieq error_mess."cannont mkdir $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || mkdir $config->{fastc_dir};
+	    unless ((defined $config->{project_name}) &&
+		    (defined $config->{raw_data}) &&
+		    (defined $config->{magic_source})) {
+		print &usage_ALIGN;
+		die;
+	    }
+	    
+	    $config->{fastc_dir} = $config->{align_dir}."/Fastc";
+	    $config->{fastq_dir} = $config->{align_dir}."/Fastq";
+	    $config->{target_dir} = $config->{align_dir}."/TARGET";
+	    $config->{tmp_align_dir} = $config->{align_dir}."/_tmp";
+	    $config->{align_log_dir} = $config->{align_dir}."/Log_files";
+	    $config->{runs_ace_file} = $config->{align_dir}."/runs.ace";
+	    
+	    dieq error_mess."cannot find db file: $config->{db_file}" unless -e $config->{db_file};
+	    dieq error_mess."cannot mkdir $config->{align_dir}: $!" unless -d $config->{align_dir} || mkdir $config->{align_dir};
+	    dieq error_mess."cannot mkdir $config->{tmp_dir}: $!" unless -d $config->{tmp_align_dir} || mkdir $config->{tmp_align_dir};
+	    dieq error_mess."cannot mkdir $config->{align_log_dir}: $!" unless -d $config->{align_log_dir} || mkdir $config->{align_log_dir};
+	    dieq error_mess."cannot symlink $config->{raw_data}: $!" unless -d $config->{fastq_dir} || symlink $pwd."/".$config->{raw_data}, $config->{fastq_dir};
+	    dieq error_mess."no genome directory defined, you need to define it at least the first time" unless -d $config->{target_dir} || defined $config->{genome};
+	    dieq error_mess."cannot symlink $config->{target_data}: $!" unless -d $config->{target_dir} || symlink $pwd."/".$config->{genome}, $config->{target_dir};
+	    
+	    if ($config->{fastc}) {
+		dieq error_mess."cannot symlink $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || symlink $pwd."/".$config->{fastc}, $config->{fastc_dir};
+	    } else {
+		dieq error_mess."cannont mkdir $config->{fastc_dir}: $!" unless -d $config->{fastc_dir} || mkdir $config->{fastc_dir};
+	    }
+	    $ENV{MAGIC_SRC} = $config->{magic_source};
 	}
-	$ENV{MAGIC_SRC} = $config->{magic_source};
-    }
-	
+    
     elsif ($config->{mode} eq "ADD") {
-		unless (defined $config->{project_name}) {
-			print &usage_ADD;
-			die;
-		}
-	} else {
-		dieq error_mess."Unexpected mode: $mode\n".&usage;
+	unless (defined $config->{project_name}) {
+	    print &usage_ADD;
+	    die;
+	}
+    } elsif ($config->{mode} eq "CALL") {
+	
+	unless (defined $config->{project_name}) {
+	    print &usage_ADD;
+	    die;
+	}
+
+	$config->{snph_dir} = $config->{align_dir}."/tmp/SNPH";
+	dieq error_mess."cannot find $config->{snph_dir}: $!" unless -d $config->{snph_dir};
+
+    } elsif ($config->{mode} eq "ANNOT") {
+	
+	unless (defined $config->{project_name}) {
+	    print &usage_ANNOT;
+	    die;
+	}
+
+	$config->{annot_dir} = $config->{project_name}."/Annotation";
+
+	dieq error_mess."cannot mkdir $config->{annot_dir}: $!" unless -d $config->{annot_dir} || mkdir $config->{annot_dir};
     }
-   
-   return $config;
+	else {
+	dieq error_mess."Unexpected mode: $mode\n".&usage;
+    }
+    
+    return $config;
 }
 
 # sub get_pswd {
@@ -205,33 +237,34 @@ sub configure {
 # }
 
 sub get_option {
-	
-	my $config = shift;
-	
-	GetOptions(
-		$config,
-		'h',                        # print basic usage
-		'help',                     # print compelt usage
-		'verbose|v',                # print out a bit more info while running
-		'quiet|q',                  # print nothing to STDERR
-		'project_name=s',           # 
-		'user=s',                   #
-		'pswd',                     #
-		'patho_file=s',             #
-		'exome_file=s',             #
-		'patient_file=s',           #
-		'genome=s',                 #
-		'raw_data=s',               #
-		'fastc=s',                  #
-		'gff_file=s',               #
-		'magic_source=s',           # 
-		'add_exome=s',
-		'add_pathology=s',
-		'add_patient=s',
-		'force_overwrite'           # force overwrite of output file if already exists
+    
+    my $config = shift;
+    
+    GetOptions(
+	$config,
+	'h',                        # print basic usage
+	'help',                     # print compelt usage
+	'verbose|v',                # print out a bit more info while running
+	'quiet|q',                  # print nothing to STDERR
+	'project_name=s',           # 
+	'user=s',                   #
+	'pswd',                     #
+	'patho_file=s',             #
+	'exome_file=s',             #
+	'patient_file=s',           #
+	'genome=s',                 #
+	'raw_data=s',               #
+	'fastc=s',                  #
+	'gff_file=s',               #
+	'magic_source=s',           # 
+	'add_exome=s',
+	'add_pathology=s',
+	'add_patient=s',
+	'fork=i',
+	'force_overwrite'           # force overwrite of output file if already exists
 	) or dieq error_mess."unexpected options, type -h or --help for help";
-		
-	return 1;
+    
+    return 1;
 }
 
 sub define_table {
@@ -311,6 +344,30 @@ END
 return $usage;
 }
 
+
+
+sub usage_ANNOT {
+    
+    my $usage =<<END;
+
+Usage ANNOT:
+
+    perl ExSQLibur.pl ANNOT [arguments]
+
+Basic options
+=============
+--h                              # Display basic usage and quit
+--help                           # Display complet usage and quit
+-v | --verbose                   # print out a bit more info while running
+-q | --quiet                     # print out a bit less info while running
+--project_name [dir]             # [required]
+
+END
+
+return $usage;
+
+}
+
 sub header {
     chomp(my $time = &get_time);
     my $logo =<<END;
@@ -318,25 +375,25 @@ sub header {
        (_)       #------------------------------#
        |=|       #           ExSQLibur          #
        |=|       #------------------------------#
-   /|__|_|__|\  
+   /|__|_|__|\\  
   (    ( )    )  # created: 
-   \|\/\"/\/|/   # version:
+   \\|\\/\\"/\\/|/   # version:
      |  Y  |     # author: Thomas Karaouzene
      |  |  |     # Date : $time
      |  |  |
     _|  |  |
- __/ |  |  |\
-/  \ |  |  |  \
+ __/ |  |  |\\
+/  \\ |  |  |  \\
    __|  |  |   |
-/\/  |  |  |   |\
- <   +\ |  |\ />  \
-  >   + \  | LJ    |
-        + \|+  \  < \
+/\\/  |  |  |   |\\
+ <   +\\ |  |\\ />  \\
+  >   + \\  | LJ    |
+        + \\|+  \\  < \\
   (O)      +    |    )
-   |             \  /\ 
- ( | )   (o)      \/  )
-_\\|//__( | )______)_/ 
-        \\|//        
+   |             \\  /\\ 
+ ( | )   (o)      \\/  )
+_\\\\|//__( | )______)_/ 
+        \\\\|//        
 END
     return $logo;
 }

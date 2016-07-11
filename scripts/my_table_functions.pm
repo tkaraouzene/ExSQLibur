@@ -114,56 +114,48 @@ sub create_table {
 }
 
 
-# sub update_table {
+sub update_table {
 
-#     #-----------------------------------------#
-#     #                                         #
-#     # Apply sqlite UPDATE function to your db #
-#     #                                         #
-#     #-----------------------------------------#
-#     #
-#     # Arguments:
-#     #
-#     # $dbh: handle returned by DBI->connect();
-#     # $args: hash ref: format: column_name => new_value
-#     #          .col_name = name of your column
-#     #          .col_type = the new value of the column
-#     # $opt: hash ref:
-#     #          .table_name = name of the table you want to create
-#     #          .clause = 
-#     #-----------------------------------------#
+    #-----------------------------------------#
+    #                                         #
+    # Apply sqlite UPDATE function to your db #
+    #                                         #
+    #-----------------------------------------#
+    #
+    # Arguments:
+    #
+    # $dbh: handle returned by DBI->connect();
+    # $args: hash ref: format: column_name => new_value
+    #
+    # $opt: hash ref:
+    #
+    #-----------------------------------------#
 
-#     my ($dbh,$args,$opt) = @_;
+    my ($dbh,$args,$opt) = @_;
 
-#     dieq "no table defined" unless defined $opt->{table};
-
-#     my $fields;
- 
-#     foreach my $k (keys %$args) {
-#         $fields .= "," if $fields;
-#         $fields .= $k." = ".$args->{$k};
-#     }
-
-
-#     my $clauses
-
-#     if ($opt->{clause}) {
-
-# 	foreach my $k (keys %$args) {
-# 	$clauses .= $opt->{clause_operator} if $clauses;
-# 	$clauses .= 
-
-#     }
-
-
-#     my $stmt = qq(UPDATA $opt->{table} SET);
-#     $stmt .= " ".$fields;
-#     $stmt .= ";";
-
-#     my $rv = $dbh->do($stmt) or dieq error_mess.$DBI::errstr;
+    dieq "no table defined" unless defined $opt->{table};
     
-#     return 1;
-# }
+    my $set;
+
+    while (@{$args->{fields}}) {
+    
+	
+	my $f = shift @{$args->{fields}};
+	my $v = shift @{$args->{values}}; 
+	
+	$set .= ", " if $set;
+	$set .= $f." = ".$v;
+    } 
+
+    my $stmt = "UPDATE ";
+    $stmt .= "OR $args->{or} " if defined $args->{or} and &check_or($args->{or});
+    $stmt .= $set;
+    $stmt .= ";";
+
+    my $rv = $dbh->do($stmt) or dieq error_mess.$DBI::errstr;
+    
+    return 1;
+}
 
 sub insert_values {
 
@@ -197,7 +189,6 @@ sub insert_values {
 	    if (ref $args->{from_hash}->{$k} eq "ARRAY") {
 
 		push @{$args->{all_values}}, [$k,@{$args->{from_hash}->{$k}}];
-		# say "aaaaaaaaaaaaa @{$args->{from_hash}->{$k}}";
 
 	    } else {
 
@@ -242,33 +233,33 @@ sub create_unique_index {
 
 sub my_select {
 
-    my ($dbh,$select) = @_;
-    my $what = join(",", @{$select->{what}}) || "*";
-    my $stmt = qq(SELECT $what FROM $select->{table});
+    my ($dbh,$args) = @_;
+    my $select = join(",", @{$args->{select}}) || "*";
+    my $stmt = qq(SELECT $select FROM $args->{table});
 
-    if (@{$select->{fields}}) {
+    if (@{$args->{fields}}) {
 	
-	dieq error_mess."\"fields\" and \"values\" have to contain the same number of values" unless @{$select->{fields}} == @{$select->{values}};
+	dieq error_mess."\"fields\" and \"values\" have to contain the same number of values" unless @{$args->{fields}} == @{$args->{values}};
 	
-	$select->{operator} ||= "AND";
+	$args->{operator} ||= "AND";
 
 	my @constraints;
 	
-	foreach my $i (0..$#{$select->{fields}}) {
-	    my $f = $select->{fields}->[$i];
-	    my $v = $select->{values}->[$i];
+	foreach my $i (0..$#{$args->{fields}}) {
+	    my $f = $args->{fields}->[$i];
+	    my $v = $args->{values}->[$i];
 	    push @constraints, $f."="."\'".$v."\'";
 	}
 
-	my $c = join " ".$select->{operator}." ",@constraints;
+	my $c = join " ".$args->{operator}." ",@constraints;
 
 	$stmt .= " WHERE ".$c.";";
     }
-    
+
     my $sth = $dbh->prepare($stmt);
     my $rv = $sth->execute() or die $DBI::errstr;
     my @r = $sth->fetchrow_array();
-    
+
     (@r >= 1) ?
 	((@r == 1) ? (return $r[0]) : (return @r)) :
 	(return);
@@ -386,4 +377,27 @@ sub drop_table {
     my $rv = $dbh->do($stmt) or dieq error_mess.$DBI::errstr;
 
     return 1;
+}
+
+
+sub check_or {
+
+    my $or = shift;
+    my $status = 1;
+
+    my $good_or = {
+	rollback => 1,
+	abort => 1,
+	replace => 1,
+	fail => 1,
+	ignore =>1,
+    };
+	
+    unless (defined $good_or->{lc $or}) {
+	
+	dieq error_mess."unexpected \"OR\" stmt: $or";
+	$status = undef;
+    }
+    
+    return $status;
 }

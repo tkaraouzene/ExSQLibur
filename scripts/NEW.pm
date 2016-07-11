@@ -22,16 +22,18 @@ sub NEW {
     my $status = 1;
     printq info_mess."Starting..." if $config->{verbose};
     
-	my $dbh = &connect_database({driver => "SQLite",
-			 db => $config->{db_file},
-			 user => $config->{user},
-			 pswd => $config->{password},
-			 verbose => 1
-			});
+    my $dbh = &connect_database({driver => "SQLite",
+				 db => $config->{db_file},
+				 user => $config->{user},
+				 pswd => $config->{password},
+				 verbose => 1
+				});
 
-	&init_table($config,$dbh);
-	
-	    &insert_values($dbh,
+    &init_table($config,$dbh);
+
+    $dbh->begin_work();
+
+    &insert_values($dbh,
 		   {table => $config->{table_name}->{vep_impact},
 		    fields => ["impact","comment"],
 		    from_hash => &vep_impact(),
@@ -48,7 +50,8 @@ sub NEW {
                     fields => ["id","name","strand"],
                     from_hash => &my_call(),
                     verbose => $config->{verbose}});
-	
+
+    $dbh->commit();
     $dbh->disconnect();
     
     printq info_mess."Finished!" if $config->{verbose};
@@ -85,6 +88,10 @@ sub init_table {
 		   verbose => $config->{verbose}						      
 		  });
 
+	&create_unique_index($dbh,{index_name => "ind_uni_model_place_date",
+				   table => $config->{table_name}->{exome},
+				   fields => "model,place,date"});
+
 	&create_table($dbh,
 		  {id => "VARCHAR(20) PRIMARY KEY NOT NULL",
 		   sex => "CHAR(1)",
@@ -105,19 +112,24 @@ sub init_table {
 			   ref_table => $config->{table_name}->{exome},
 			   ref_fields => "id",
 			   table_fields => "exome"}
-			   ]
+		       ]
 		  });
 
 	&create_table($dbh,
-		  {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
-		   chromosome => "VARCHAR(2)",
-		   position => "INT UNSIGNED",
-		   referance_allele => "VARCHAR(20)",
-		   altered_allele => "VARCHAR(20)",
-		   rs_id => "VARCHAR(15)"},
-		  {table => $config->{table_name}->{variant},
-		   verbose => $config->{verbose}						      
-		  });
+		      {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
+		       chromosome => "VARCHAR(2)",
+		       position => "INT UNSIGNED",
+		       reference_allele => "VARCHAR(20)",
+		       altered_allele => "VARCHAR(20)",
+		       rs_id => "VARCHAR(15)",
+		       vep_pred => "BOOLEAN"},
+		      {table => $config->{table_name}->{variant},
+		       verbose => $config->{verbose}						      
+		      });
+	
+	&create_unique_index($dbh,{index_name => "ind_uni_chr_pos_ref_alt",
+				   table => $config->{table_name}->{variant},
+				   fields => "chromosome,position,reference_allele,altered_allele"});
 
 	&create_table($dbh,
 		  {id => "CHAR(1) PRIMARY KEY NOT NULL",
@@ -196,78 +208,102 @@ sub init_table {
 		  });
 
 	&create_table($dbh,
-				  {consequence => "VARCHAR(30) PRIMARY KEY NOT NULL",
-		   comment => "VARCHAR(100)",
-		   so_accession => "VARCHAR(12)",
-		   display_term => "VARCHAR(30)",
-		   impact => "VARCHAR(8) NOT NULL"},
-				  {table => $config->{table_name}->{vep_csq},
-				   verbose => $config->{verbose},
-		   fk => [{name => "fk_impact",
-						   ref_table => $config->{table_name}->{vep_impact},
-						   ref_fields => "id",
-						   table_fields => "impact"}
+		      {consequence => "VARCHAR(30) PRIMARY KEY NOT NULL",
+		       comment => "VARCHAR(100)",
+		       so_accession => "VARCHAR(12)",
+		       display_term => "VARCHAR(30)",
+		       impact => "VARCHAR(8) NOT NULL"},
+		      {table => $config->{table_name}->{vep_csq},
+		       verbose => $config->{verbose},
+		       fk => [{name => "fk_impact",
+			       ref_table => $config->{table_name}->{vep_impact},
+			       ref_fields => "id",
+			       table_fields => "impact"}
 			   ]
-		  });
+		      });
 
-	&create_table($dbh,
-		  {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
-		   variant_id => "INT NOT NULL",
-		   transcript_id => "VARCHAR(20)",
-		   csq_id => "INT NOT NULL",
-		   cdc_position => "INT NOT NULL",
-		   cds_position => "INT NOT NULL"},
-		  {table => $config->{table_name}->{overlap},
-		   verbose => $config->{verbose}, 	      
-		   fk => [{name => "fk_transcript_id",
-			   ref_table => $config->{table_name}->{transcript},
-			   ref_fields => "id",
-			   table_fields => "transcript_id"},
-			  {name => "fk_variant_id",
-			   ref_table => $config->{table_name}->{variant},
-			   ref_fields => "id",
-			   table_fields => "variant_id"},
-			  {name => "fk_csq_id",
-			   ref_table => $config->{table_name}->{vep_csq},
-			   ref_fields => "id",
-			   table_fields => "csq_id"}
-			   ]
-		  });
+	# &create_table($dbh,
+	# 	  {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
+	# 	   variant_id => "INT NOT NULL",
+	# 	   transcript_id => "VARCHAR(20)",
+	# 	   csq_id => "INT NOT NULL",
+	# 	   cdc_position => "INT NOT NULL",
+	# 	   cds_position => "INT NOT NULL"},
+	# 	  {table => $config->{table_name}->{overlap},
+	# 	   verbose => $config->{verbose}, 	      
+	# 	   fk => [{name => "fk_transcript_id",
+	# 		   ref_table => $config->{table_name}->{transcript},
+	# 		   ref_fields => "id",
+	# 		   table_fields => "transcript_id"},
+	# 		  {name => "fk_variant_id",
+	# 		   ref_table => $config->{table_name}->{variant},
+	# 		   ref_fields => "id",
+	# 		   table_fields => "variant_id"},
+	# 		  {name => "fk_csq_id",
+	# 		   ref_table => $config->{table_name}->{vep_csq},
+	# 		   ref_fields => "id",
+	# 		   table_fields => "csq_id"}
+	# 		   ]
+	# 	  });
 	
-	printq info_mess."end" if $config->{verbose}; 
+	&create_table($dbh,
+		      {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
+		       variant_id => "INT NOT NULL",
+		       transcript_id => "VARCHAR(20)",
+		       csq => "VARCHAR(200)",
+		       cdc_position => "INT",
+		       cds_position => "INT",
+		       protein_position => "INT",
+		       amino_acid =>  "VARCHAR(3)",
+		       codon => "VARCHAR(7)",
+		       impact => "VARCHAR(8)",},
+		      {table => $config->{table_name}->{overlap},
+		       verbose => $config->{verbose}, 	      
+		       fk => [{name => "fk_variant_id",
+			       ref_table => $config->{table_name}->{variant},
+			       ref_fields => "id",
+			       table_fields => "variant_id"},
+			      {name => "fk_impact",
+			       ref_table => $config->{table_name}->{vep_impact},
+			       ref_fields => "impact",
+			       table_fields => "impact"}
+			   ]
+		      });
 
+	printq info_mess."end" if $config->{verbose}; 
+	
 	return 1;
 }
 
 sub my_call {
 
+    
+    my $calls = {
 	
-	my $calls = {
-	
-		"1" => ["HR","DS"],
-		"2" => ["HET","DS"],
-		"3" => ["HV","DS"],
-		"4" => ["NC","DS"],
-		"5" => ["NCLGL","DS"],
-		"6" => ["HVPC","DS"],
-		"7" => ["PC","DS"],
-		"8" => ["discW","DS"],
-		"9" => ["discS","DS"],
+	"1" => ["HR","DS"],
+	"2" => ["HET","DS"],
+	"3" => ["HV","DS"],
+	"4" => ["NC","DS"],
+	"5" => ["NCLGL","DS"],
+	"6" => ["HVPC","DS"],
+	"7" => ["PC","DS"],
+	"8" => ["discW","DS"],
+	"9" => ["discS","DS"],
 
-		a => ["HR","SS"],
-		b => ["HET","SS"],
-		c => ["HV","SS"],
-		d => ["LGL","SS"],
-		e => ["LGR","SS"],
-		f => ["HGL","SS"],
-		g => ["HGR","SS"],
-		h => ["HVPC","SS"],
-		i => ["PC","SS"],
+	a => ["HR","SS"],
+	b => ["HET","SS"],
+	c => ["HV","SS"],
+	d => ["LGL","SS"],
+	e => ["LGR","SS"],
+	f => ["HGL","SS"],
+	g => ["HGR","SS"],
+	h => ["HVPC","SS"],
+	i => ["PC","SS"],
 
-		0 => ["","NS"],
-		"*" => ["NC",""]
-	};
+	0 => ["","NS"],
+	"*" => ["NC",""]
+    };
 
-	return $calls;
+    return $calls;
 }
-			
+
