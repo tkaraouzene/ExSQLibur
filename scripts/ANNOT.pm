@@ -69,6 +69,7 @@ sub annot_vep {
 	my ($id,$chr,$pos,$ref,$alt) = @$row;
 	say $in_fh join "\t",$chr,$pos,".",$ref,$alt;
 	push @ids, $id;
+	
     }
     
     close $in_fh ;
@@ -81,8 +82,26 @@ sub annot_vep {
     if ($nb_tot > 0) {
 
 	my $tmp_out_file = $config->{annot_dir}."/_tmp_vep_out.vcf";
-	my $log_file = $config->{annot_dir}."/log_vep.log";
-
+		
+    my $log_dir = fileparse($config->{annot_dir})."/".get_day();
+	
+	my$lf = $log_dir."/"."log_vep";
+	my $log_file = $lf.".log";
+	
+	
+	if (-e $log_file) {
+	    
+	    my $i = 0;
+		
+	    while (-e $log_file) {
+		
+		$i++;
+		$log_file = $lf."_".$i."log";
+	    }
+	    
+	    $log_file = $lf;
+	}
+	
 	my $cmd = "variant_effect_predictor.pl ";
 	$cmd .= "-i $tmp_in_file ";
 	$cmd .= "-o $tmp_out_file ";
@@ -92,11 +111,16 @@ sub annot_vep {
 	$cmd .= "--vcf ";
 	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
+	$cmd .= "--stat_file $log_dir/stat.html",
 	$cmd .= "--cache";
 
-	printq info_mess."VEP Start..." if defined $config->{verbose}; 
-	`$cmd &>$log_file`;
-	printq info_mess."VEP Finished!" if defined $config->{verbose}; 
+	my $log_fh = openOUT $log_file;
+	say  $log_fh info_mess."$nb_tot new variants need to be annotated by VEP";
+	say $log_fh info_mess $cmd;	
+	
+	printq info_mess."VEP &>$log_file Start..." if defined $config->{verbose}; 
+	`$cmd &>>$log_file`;
+	printq info_mess."VEP &>$log_file Finished!" if defined $config->{verbose}; 
 
 	printq info_mess."update db start..." if defined $config->{verbose}; 
 
