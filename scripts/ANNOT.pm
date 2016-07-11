@@ -83,8 +83,9 @@ sub annot_vep {
 
 	my $tmp_out_file = $config->{annot_dir}."/_tmp_vep_out.vcf";
 		
-    my $log_dir = fileparse($config->{annot_dir})."/".get_day();
-	
+    my $log_dir = $config->{annot_dir})."/".get_day();
+	dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
+
 	my$lf = $log_dir."/"."log_vep";
 	my $log_file = $lf.".log";
 	
