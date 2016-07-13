@@ -103,13 +103,14 @@ MAGIC (ftp://ftp.ncbi.nlm.nih.gov/repository/acedb/Software/Magic/) and variant 
 
 ##### perl library:
 
+```perl
 use DBI;
 use Getopt::Long;
 use feature qw(say);
 use File::Path qw(rmtree);
 use Scalar::Util qw(openhandle);
 use File::Basename;
-
+```
 
 
 
