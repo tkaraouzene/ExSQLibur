@@ -97,6 +97,18 @@ perl ExSQLibur ANNOT \
   --fork [Use forking to improve script runtime]
 ```
 
+## Dependency 
+
+MAGIC (ftp://ftp.ncbi.nlm.nih.gov/repository/acedb/Software/Magic/) and variant effect predictor (http://www.ensembl.org/info/docs/tools/vep/script/index.html) are nedeed
+
+##### perl library:
+
+use DBI;
+use Getopt::Long;
+use feature qw(say);
+use File::Path qw(rmtree);
+use Scalar::Util qw(openhandle);
+use File::Basename;
 
 
 
