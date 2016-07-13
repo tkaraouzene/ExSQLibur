@@ -83,4 +83,23 @@ perl ExSQLibur ALIGN \
 ```
 
 
+### 4. Genotype calling
+
+```
+perl ExSQLibur CALL \
+  --project_name  [your_project_name] \ 
+```
+### 5. Variant annotation
+
+```
+perl ExSQLibur ANNOT \
+  --project_name  [your_project_name] \ 
+  --fork [Use forking to improve script runtime]
+```
+
+
+
+
+
+
 
