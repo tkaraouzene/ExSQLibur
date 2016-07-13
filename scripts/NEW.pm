@@ -9,8 +9,10 @@ use DBI;
 use feature qw(say);
 use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
 use my_file_manager qw(openIN);
-use my_table_functions qw(connect_database create_table insert_values drop_table create_unique_index my_select alter_table);
-use my_vep_functions qw(vep_impact vep_csq);
+use my_table_functions qw(connect_database begin_commit create_table insert_values my_select create_unique_index);
+use my_vep_functions qw(parse_vep_meta_line parse_vep_info fill_vep_table check_vep_allele vep_impact vep_csq);
+use my_vcf_functions qw(skip_vcf_meta is_indel parse_vcf_line parse_vcf_info);
+
 require Exporter;
 
 our @ISA = qw(Exporter);
@@ -20,41 +22,45 @@ sub NEW {
 
     my $config = shift;
     my $status = 1;
-    printq info_mess."Starting..." if $config->{verbose};
+
+    printq info_mess."Starting..." unless $config->{quiet};
     
     my $dbh = &connect_database({driver => "SQLite",
 				 db => $config->{db_file},
 				 user => $config->{user},
 				 pswd => $config->{password},
-				 verbose => 1
+				 verbose => $config->{verbose}
 				});
 
+    $dbh->begin_work();
+
     &init_table($config,$dbh);
-    
+
     &insert_values($dbh,
 		   {table => $config->{table_name}->{vep_impact},
 		    fields => ["impact","comment"],
 		    from_hash => &vep_impact(),
-		    verbose => $config->{verbose},
-		    begin_commit => 1});
+		    verbose => $config->{verbose}});
 
     &insert_values($dbh,
                    {table => $config->{table_name}->{vep_csq},
                     fields => ["consequence","comment","so_accession","display_term","impact"],
                     from_hash => &vep_csq(),
-                    verbose => $config->{verbose},
-		    begin_commit => 1});
+                    verbose => $config->{verbose}});
 
     &insert_values($dbh,
 	       {table => $config->{table_name}->{call},
 		fields => ["id","name","strand"],
 		from_hash => &my_call(),
-		verbose => $config->{verbose},
-		begin_commit => 1});
-    
+		verbose => $config->{verbose}});
+
+    $dbh->commit();
+
+    &insert_exac($dbh,$config);
+
     $dbh->disconnect();
     
-    printq info_mess."Finished!" if $config->{verbose};
+    printq info_mess."Finished!" unless $config->{quiet};
     
     return $status;
 }
@@ -67,8 +73,6 @@ sub init_table {
 	my ($config,$dbh) = @_;
 	
 	printq info_mess."start" if $config->{verbose}; 
-	
-	$dbh->begin_work();
 
 	&create_table($dbh,
 		  {name => "VARCHAR(25) PRIMARY KEY NOT NULL",
@@ -124,6 +128,7 @@ sub init_table {
 		       reference_allele => "VARCHAR(20)",
 		       altered_allele => "VARCHAR(20)",
 		       rs_id => "VARCHAR(15)",
+		       exac_maf => "DECIMAL(10,9)",
 		       vep_pred => "BOOLEAN"},
 		      {table => $config->{table_name}->{variant},
 		       verbose => $config->{verbose}						      
@@ -281,11 +286,8 @@ sub init_table {
 				   table => $config->{table_name}->{overlap},
 				   fields => "variant_id,transcript_id"});
 
-
-	$dbh->commit();
-
 	printq info_mess."end" if $config->{verbose}; 
-	
+
 	return 1;
 }
 
@@ -321,3 +323,116 @@ sub my_call {
     return $calls;
 }
 
+sub find_annot {
+
+    my $table = shift;
+    my @r;
+    
+   while (my $a = shift @_) {
+
+       $table->{$a} ||= "";
+       push @r,  $table->{$a};
+   }
+
+    (@r == 1) ?
+	(return $r[0]) : 
+	(return @r);
+}
+
+sub insert_exac {
+
+    my ($dbh,$config) = @_;
+    my $exac_file = $config->{exac_dir}."/ExAC.r0.3.sites.vep81_GRC37.vcf.gz";
+
+    if (-e $exac_file) {
+
+	printq info_mess."exac start" if defined $config->{verbose};
+
+	my $exac_fh = openIN $exac_file;
+	my ($meta_line,$header,$vep_meta_line) = skip_vcf_meta $exac_fh,"CSQ";
+	my $vep_format = parse_vep_meta_line $vep_meta_line;
+	my $nb_done = 0;
+	
+	my @good_info = ("CSQ","AC_Adj","AN_Adj");
+
+	while (<$exac_fh>) {
+
+	    &begin_commit({dbh => $dbh,
+			   done => $nb_done,
+			   scale => 20000,
+			   verbose => $config->{verbose}
+			  });
+ 
+	    my ($chr,$pos,$rs,$ref,$alts,$qual,$filter,$info) = parse_vcf_line $_;
+	    
+	    next unless $filter eq "PASS";
+	    
+	    my $infoTable = parse_vcf_info $info;
+	    my ($vep_info,$nb_alts_allele,$nb_tot_allele) = &find_annot($infoTable,@good_info);
+	
+	    my @alts = split /,/, $alts;
+	    my @nb_alts_allele = split /,/, $nb_alts_allele;
+
+	    dieq error_mess."@alts != @nb_alts_allele" unless @alts == @nb_alts_allele;
+
+	    dieq error_mess."cannot find vepInfo" unless defined $vep_info;
+	    
+	    my $vep_infos = parse_vep_info $vep_info;
+
+	    foreach my $i (0..$#alts) {
+
+		my $alt = $alts[$i];
+		my $nb_alt_allele = $nb_alts_allele[$i];
+
+		my $maf = $nb_alt_allele / $nb_tot_allele;
+
+		dieq error_mess."unexpected maf: $maf" if $maf > 1 || $maf < 0; 
+		
+                my $v = join ",", map {"'$_'"} $chr,$pos,$ref,$alt,$maf;
+
+		my $stmt = qq(INSERT INTO $config->{table_name}->{variant} (chromosome,position,reference_allele,altered_allele,exac_maf) 
+	                      VALUES ($v););
+		
+		$dbh->do($stmt);
+
+		my $variant_id = &my_select($dbh,
+					    {table => $config->{table_name}->{variant},
+					     select => ["id"],
+					     fields => ["chromosome","position","reference_allele","altered_allele"],
+					     values => [$chr,$pos,$ref,$alt],
+					     operator => "AND",
+					     verbose => $config->{verbose}
+					    }) or dieq error_mess."$chr:$pos:$ref:$alt: no such variant_id found in $config->{table_name}->{variant}"; 
+
+	      VI: foreach my $vi (@$vep_infos) {
+		  
+		  my $vepTable = fill_vep_table $vi,$vep_format;	 
+		  
+		  
+		  my ($which_allele,$transcript,$csqs,$impact,$cdna,$cds,$prot,$aa,$codon) = 
+		      &find_annot($vepTable,"Allele","Feature","Consequence","IMPACT",
+				  "cDNA_position","CDS_position","Protein_position",
+				  "Amino_acids","Codons");
+		  
+		  # check if the VEP csq is about the same Alt allele than the VCF line
+		  next VI unless &check_vep_allele($ref,$alt,$which_allele,$chr,$pos);  
+
+		  $v = join ",", map {"'$_'"} $variant_id,$transcript,$csqs,$impact,$cdna,$cds,$prot,$aa,$codon;
+
+		  $stmt = qq(INSERT INTO $config->{table_name}->{overlap} (variant_id,transcript_id,csq,impact,cdc_position,cds_position,protein_position,amino_acid,codon)
+                             VALUES ($v););
+		  $dbh->do($stmt);
+	      }
+		
+	    }
+	    $nb_done++;
+	}
+
+	$dbh->commit();
+
+	printq info_mess."exac end" if defined $config->{verbose};
+
+    }
+
+    return 1;
+}

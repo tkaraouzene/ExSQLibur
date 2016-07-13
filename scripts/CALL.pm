@@ -7,8 +7,7 @@ use lib 'scripts';
 use strict;
 use warnings;
 
-use Parallel::ForkManager;
-use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess get_day);
+use my_warnings qw(dieq printq error_mess info_mess get_day);
 use my_table_functions qw(connect_database insert_values my_select begin_commit);
 use my_snph_functions qw(parse_snph_line parse_snph_variant snph_indel_position_recalibration);
 use my_genotype_calling_functions qw(geno_code);

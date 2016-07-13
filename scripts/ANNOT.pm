@@ -103,10 +103,6 @@ sub annot_vep {
 	$cmd .= "--db_version 75 ";
 	$cmd .= "--fork $config->{fork} " if defined $config->{fork};
 	$cmd .= "--vcf ";
-	# $cmd .= "--sift b ";
-	# $cmd .= "--polyphen b ";
-	# $cmd .= "--maf_esp ";
-	# $cmd .= "--maf_1kg ";
 	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
 	$cmd .= "--stats_file $log_dir/stat.html ",
@@ -150,13 +146,12 @@ sub annot_vep {
 	    
 	    foreach my $vi (@$vep_infos) {
 
-		
 		# return a hash table with key 
 		my $vepTable = fill_vep_table $vi,$vep_format;	 
 
-		my $v = join ",",map {"'$_'"} &find_annot($vepTable,"Consequence","IMPACT","cDNA_position","CDS_position","Protein_position","Amino_acids","Codons");
+		my $v = join ",", map {"'$_'"} $variant_id,&find_annot($vepTable,"Feature","Consequence","IMPACT","cDNA_position","CDS_position","Protein_position","Amino_acids","Codons");
 
-		my $stmt = qq(INSERT INTO $config->{table_name}->{overlap} (variant_id,csq,impact,cdc_position,cds_position,amino_acid,codon)
+		my $stmt = qq(INSERT INTO $config->{table_name}->{overlap} (variant_id,transcript_id,csq,impact,cdc_position,cds_position,amino_acid,codon)
                      VALUES ($v););
 
 		my $rv = $dbh->do($stmt);

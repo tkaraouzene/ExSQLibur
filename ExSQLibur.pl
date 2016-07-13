@@ -83,6 +83,7 @@ sub configure {
     $config->{db_file} = $config->{db}.".db";
     $config->{align_dir} = $config->{project_name}."/Align_data";
     $config->{data_dir} = $pwd."/data";	
+    $config->{exac_dir} = $config->{data_dir}."/ExAC";
     $config->{scripts_dir} = $pwd."/scripts";	
 
     dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
