@@ -23,30 +23,33 @@ sub ALIGN {
     my $config = shift;
     my $status = 1;
 
-    printq info_mess."Starting..." if $config->{verbose};
+    printq info_mess."Starting..." unless defined $config->{quiet};
     
     my $dbh = &connect_database({driver => "SQLite",
 				 db => $config->{db_file},
 				 user => $config->{user},
 				 pswd => $config->{password},
-				 verbose => 1
+				 verbose => $config->{verbose}
 				});
+
+    $ENV{MAGIC} = $config->{project_name};
 
     &update_runs_ace($config,$dbh);
     
     chdir $config->{align_dir};
 	
-	&init_align($config) unless -d $config->{align_dir}."/MetaDB";
+    my $metaDB_dir = fileparse $config->{align_dir}."/MetaDB";
 
-    my $tbly = qq(./tbly MetaDB <<EOF
+    &init_align($config) unless -d $metaDB_dir;
+
+    my $tbly_cmd = qq(./tbly MetaDB <<EOF
 parse runs.ace
 save
 quit
 EOF
 );
-
-    $ENV{MAGIC} = $config->{project_name};
-    `$tbly`;
+    
+    `$tbly_cmd`;
 
     my $fh = openOUT "LIMITS", {mode => ">>"};
 
@@ -63,51 +66,51 @@ EOF
 	
     	my $log_file  = $log_dir."/log_".$process;
 	
-	if (-e $log_file) {
+    	if (-e $log_file) {
 	    
-	    my $i = 0;
-	    my $lf = $log_file;
+    	    my $i = 0;
+    	    my $lf = $log_file;
 	    
-	    while (-e $lf) {
+    	    while (-e $lf) {
 		
-		$i++;
-		$lf = $log_file."_".$i;
-	    }
+    		$i++;
+    		$lf = $log_file."_".$i;
+    	    }
 	    
-	    $log_file = $lf;
-	}
+    	    $log_file = $lf;
+    	}
 	
-	$log_file .= ".log";
+    	$log_file .= ".log";
 	
-	my $cmd = "./MAGIC";
+    	my $cmd = "./MAGIC";
     	$cmd .= " ".$process;
     	$cmd .= " &>".$log_file;
-    	printq info_mess."$cmd start" if defined $config->{verbose};
+
+    	printq info_mess."MAGIC $process &>$config->{align_dir}/$log_file start" if defined $config->{verbose};
+    	say $cmd;
     	`$cmd`;
-    	printq info_mess."$cmd end" if defined $config->{verbose};
+    	printq info_mess."MAGIC $process &>$config->{align_dir}/$log_file finshed" if defined $config->{verbose};
+
     }
 
     # &update_aligned($config,$dbh);
     
     $dbh->disconnect();
     
-    
-    printq info_mess."Finished!" if $config->{verbose};
+    printq info_mess."Finished!" unless defined $config->{quiet};
     return $status;
-
 }
 
 sub init_align {
     
     my $config = shift;
 
-    printq info_mess."Starting...";
+    printq info_mess."Starting..." if defined $config->{verbose};
     
     my $day = get_day();
     my $log_dir = fileparse($config->{align_log_dir})."/".$day;
     dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
     my $cmd = "$ENV{MAGIC_SRC}/waligner/scripts/MAGIC init DNA &>".$log_dir."/log_init_dna.log";
-
 
     `$cmd`;
     
@@ -117,7 +120,7 @@ sub init_align {
     say $fh "setenv TMPDIR $tmp_dir";
     close $fh;
 
-    printq info_mess."Finished";
+    printq info_mess."Finished" if defined $config->{verbose};
 
     return;
 
@@ -157,6 +160,7 @@ sub update_runs_ace {
 	warnq warn_mess."$id: f1: $config->{raw_data}.\"/\".$f2 not found" unless -e  $config->{fastq_dir}."/".$f2;
 
        	my $runs_ace_info;
+	print $runs_ace_fh "\n";
 	say $runs_ace_fh "Run $id";
 	say $runs_ace_fh "FILE fastq/1 Fastq/$f1";
 	say $runs_ace_fh "FILE fastq/2 Fastq/$f2" if $f2;
@@ -176,13 +180,15 @@ sub update_runs_ace {
     }
     
     $sth->finish();
-    
+
     if (@patient_to_update) {
 
 	printq info_mess."Updating patient...";
 
 	say $runs_ace_fh "Run All_runs";
 	say $runs_ace_fh "Project $config->{project_name}";
+	
+	$dbh->begin_work();
 
 	foreach my $patient (@patient_to_update) {
 	    
@@ -193,7 +199,9 @@ sub update_runs_ace {
 
 	    say $runs_ace_fh "Runs ".$patient;
 	}
-    
+
+	$dbh->commit();
+	
 	printq info_mess."Update patient finished!";
     }
     

@@ -245,19 +245,21 @@ sub begin_commit {
     if ($args->{done} % $args->{scale} == 0) {
 	
 	unless ($args->{done} == 0) {
-	 
-	    $dbh->commit() unless $args->{done} == 0;
 	    
-	    my $mess = $args->{done};
+	    $dbh->commit();
+
+	    my $mess;
+	    $mess = $args->{done};
 	    $mess .= " / ".$args->{tot} if defined $args->{tot};
 	    $mess .= " done";
 	    $mess .= " $args->{remains} remaining" if defined $args->{remains};
-	
-	    printq info_mess.$mess if defined $args->{verbose}; 
+	    
+	    printq info_mess.$mess
 	}
+
 	$dbh->begin_work();
     }
-
+    
     return 1;
 }
 

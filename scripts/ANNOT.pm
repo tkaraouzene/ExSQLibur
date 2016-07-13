@@ -78,31 +78,24 @@ sub annot_vep {
 
     printq info_mess."retrieving variant needed to be annotated by vep end..." if defined $config->{verbose}; 
     printq info_mess."$nb_tot new variants need to be annotated by VEP" if defined $config->{verbose}; 
- 
+    
     if ($nb_tot > 0) {
 
 	my $tmp_out_file = $config->{annot_dir}."/_tmp_vep_out.vcf";
-		
-    my $log_dir = $config->{annot_dir}."/".get_day();
+	
+	my $log_dir = $config->{annot_dir}."/".get_day();
 	dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
 
 	my$lf = $log_dir."/"."log_vep";
 	my $log_file = $lf.".log";
-	
-	
-	if (-e $log_file) {
+	my $i = 1;
 	    
-	    my $i = 0;
-		
-	    while (-e $log_file) {
-		
-		$i++;
-		$log_file = $lf."_".$i."log";
-	    }
+	while (-e $log_file) {
 	    
-	    $log_file = $lf;
+	    $i++;
+	    $log_file = $lf."_".$i.".log";
 	}
-	
+	    
 	my $cmd = "variant_effect_predictor.pl ";
 	$cmd .= "-i $tmp_in_file ";
 	$cmd .= "-o $tmp_out_file ";
@@ -110,6 +103,10 @@ sub annot_vep {
 	$cmd .= "--db_version 75 ";
 	$cmd .= "--fork $config->{fork} " if defined $config->{fork};
 	$cmd .= "--vcf ";
+	# $cmd .= "--sift b ";
+	# $cmd .= "--polyphen b ";
+	# $cmd .= "--maf_esp ";
+	# $cmd .= "--maf_1kg ";
 	$cmd .= "--no_progress ";
 	$cmd .= "--force_overwrite ";
 	$cmd .= "--stats_file $log_dir/stat.html ",
@@ -133,20 +130,13 @@ sub annot_vep {
 
 	while (<$out_fh>) {
 
-	    # if ($nb_done % 15000 == 0) {
-	    # 	$dbh->commit() unless $nb_done == 0;
-	    # 	printq info_mess."$nb_done / $nb_tot done, ".scalar @ids." remaining" if defined $config->{verbose}; 
-	    # 	$dbh->begin_work();
-	    # }
-
 	    &begin_commit({dbh => $dbh,
 			   done => $nb_done,
 			   tot => $nb_tot,
 			   remains => scalar @ids,
-			   verbose => $config->{verbose},
 			   scale => 15000
 			  });
-
+	    
 
 	    my ($chr,$pos,$rs,$ref,$alt,$qual,$filter,$info) = parse_vcf_line $_;
 	    my $infoTable = parse_vcf_info $info;
@@ -164,7 +154,7 @@ sub annot_vep {
 		# return a hash table with key 
 		my $vepTable = fill_vep_table $vi,$vep_format;	 
 
-		my $v = join ",",(map {"'$_'"} &find_annot($vepTable,"Consequence","IMPACT","cDNA_position","CDS_position","Protein_position","Amino_acids","Codons"));
+		my $v = join ",",map {"'$_'"} &find_annot($vepTable,"Consequence","IMPACT","cDNA_position","CDS_position","Protein_position","Amino_acids","Codons");
 
 		my $stmt = qq(INSERT INTO $config->{table_name}->{overlap} (variant_id,csq,impact,cdc_position,cds_position,amino_acid,codon)
                      VALUES ($v););
@@ -173,10 +163,16 @@ sub annot_vep {
 		
 	    }
 
-	    my $stmt = qq(UPDATE $config->{table_name}->{variant}
-        	      SET vep_pred = 1 
-		      WHERE id = \"$variant_id\";);
-	    my $rv = $dbh->do($stmt);
+	    my $sql = sprintf "UPDATE %s SET vep_pred = 1 WHERE id = %s",
+	    $dbh->quote_identifier($config->{table_name}->{variant}),$dbh->quote($variant_id);
+
+	    my $sth = $dbh->prepare($sql);
+	    $sth->execute();
+
+	    # my $stmt = qq(UPDATE $config->{table_name}->{variant}
+        	      # SET vep_pred = 1 
+		      # WHERE id = \"$variant_id\";);
+	    # my $rv = $dbh->do($stmt);
 
 	    $nb_done ++;
 	}

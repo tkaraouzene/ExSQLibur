@@ -67,6 +67,8 @@ sub init_table {
 	my ($config,$dbh) = @_;
 	
 	printq info_mess."start" if $config->{verbose}; 
+	
+	$dbh->begin_work();
 
 	&create_table($dbh,
 		  {name => "VARCHAR(25) PRIMARY KEY NOT NULL",
@@ -161,6 +163,10 @@ sub init_table {
 			   table_fields => "call_id"}
 					   ]			      
 		  });
+
+	&create_unique_index($dbh,{index_name => "ind_uni_patient_variant",
+				   table => $config->{table_name}->{carry},
+				   fields => "patient_id,variant_id"});
 
 	&create_table($dbh,
 		  {id => "VARCHAR(20) PRIMARY KEY NOT NULL",
@@ -269,6 +275,14 @@ sub init_table {
 			       table_fields => "impact"}
 			   ]
 		      });
+
+
+	&create_unique_index($dbh,{index_name => "ind_uni_var_transcript",
+				   table => $config->{table_name}->{overlap},
+				   fields => "variant_id,transcript_id"});
+
+
+	$dbh->commit();
 
 	printq info_mess."end" if $config->{verbose}; 
 	

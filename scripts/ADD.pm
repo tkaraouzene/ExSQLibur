@@ -31,7 +31,7 @@ sub ADD {
 				 pswd => $config->{password},
 				 verbose => 1
 				});
-    # $dbh->begin_work();
+    $dbh->begin_work();
 
     if (defined $config->{add_exome}) {
 	
@@ -128,7 +128,7 @@ sub ADD {
 	warnq warn_mess."Nothing to add, you should specify one of: --add_exome, --add_pathology or --add_patient";
     }
 
-    # $dbh->commit();
+    $dbh->commit();
     $dbh->disconnect();
 
     printq info_mess."Finished!" if $config->{verbose};
