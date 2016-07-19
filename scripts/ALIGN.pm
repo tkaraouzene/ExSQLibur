@@ -61,8 +61,19 @@ EOF
     my $log_dir = fileparse($config->{align_log_dir})."/".$day;
     
     dieq error_mess."cannot mkdir $log_dir: $!" unless -d $log_dir || mkdir $log_dir;
-    
-    foreach my $process ("a0","ALIGN","WIGGLE","SNV") {
+
+    my @process;
+
+    if ($config->{process}) {
+
+	@process = split /,/, $config->{process};
+
+    } else {
+
+	@process = ("a0","ALIGN","WIGGLE","SNV");
+    }
+
+    foreach my $process (@process) {
 	
     	my $log_file  = $log_dir."/log_".$process;
 	
@@ -87,8 +98,7 @@ EOF
     	$cmd .= " &>".$log_file;
 
     	printq info_mess."MAGIC $process &>$config->{align_dir}/$log_file start" if defined $config->{verbose};
-    	say $cmd;
-    	`$cmd`;
+	`$cmd`;
     	printq info_mess."MAGIC $process &>$config->{align_dir}/$log_file finshed" if defined $config->{verbose};
 
     }
@@ -142,12 +152,12 @@ sub update_runs_ace {
                   ON p.exome = e.id
                   ); 
 
-    $stmt .= "AND p.is_runs_ace = 0" if -e $config->{runs_ace_file};
+    # $stmt .= "AND p.is_runs_ace = 0" if -e $config->{runs_ace_file};
     $stmt .= ";";
 
     my @patient_to_update;
 
-    my $runs_ace_fh = openOUT $config->{runs_ace_file}, {mode => ">>"};
+    my $runs_ace_fh = openOUT $config->{runs_ace_file};
 
     my $sth = $dbh->prepare($stmt);
     my $rv = $sth->execute() or die $DBI::errstr;

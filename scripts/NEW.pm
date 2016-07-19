@@ -7,7 +7,7 @@ use warnings;
 
 use DBI;
 use feature qw(say);
-use my_warnings qw(dieq printq warnq warn_mess error_mess info_mess);
+use my_warnings qw(dieq printq error_mess info_mess);
 use my_file_manager qw(openIN);
 use my_table_functions qw(connect_database begin_commit create_table insert_values my_select create_unique_index);
 use my_vep_functions qw(parse_vep_meta_line parse_vep_info fill_vep_table check_vep_allele vep_impact vep_csq);
@@ -56,7 +56,7 @@ sub NEW {
 
     $dbh->commit();
 
-    &insert_exac($dbh,$config);
+    &insert_exac_variants($dbh,$config);
 
     $dbh->disconnect();
     
@@ -233,30 +233,6 @@ sub init_table {
 			   ]
 		      });
 
-	# &create_table($dbh,
-	# 	  {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
-	# 	   variant_id => "INT NOT NULL",
-	# 	   transcript_id => "VARCHAR(20)",
-	# 	   csq_id => "INT NOT NULL",
-	# 	   cdc_position => "INT NOT NULL",
-	# 	   cds_position => "INT NOT NULL"},
-	# 	  {table => $config->{table_name}->{overlap},
-	# 	   verbose => $config->{verbose}, 	      
-	# 	   fk => [{name => "fk_transcript_id",
-	# 		   ref_table => $config->{table_name}->{transcript},
-	# 		   ref_fields => "id",
-	# 		   table_fields => "transcript_id"},
-	# 		  {name => "fk_variant_id",
-	# 		   ref_table => $config->{table_name}->{variant},
-	# 		   ref_fields => "id",
-	# 		   table_fields => "variant_id"},
-	# 		  {name => "fk_csq_id",
-	# 		   ref_table => $config->{table_name}->{vep_csq},
-	# 		   ref_fields => "id",
-	# 		   table_fields => "csq_id"}
-	# 		   ]
-	# 	  });
-	
 	&create_table($dbh,
 		      {id => "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
 		       variant_id => "INT NOT NULL",
@@ -281,7 +257,6 @@ sub init_table {
 			   ]
 		      });
 
-
 	&create_unique_index($dbh,{index_name => "ind_uni_var_transcript",
 				   table => $config->{table_name}->{overlap},
 				   fields => "variant_id,transcript_id"});
@@ -292,7 +267,6 @@ sub init_table {
 }
 
 sub my_call {
-
     
     my $calls = {
 	
@@ -339,14 +313,14 @@ sub find_annot {
 	(return @r);
 }
 
-sub insert_exac {
+sub insert_exac_variants {
 
     my ($dbh,$config) = @_;
     my $exac_file = $config->{exac_dir}."/ExAC.r0.3.sites.vep81_GRC37.vcf.gz";
 
     if (-e $exac_file) {
 
-	printq info_mess."exac start" if defined $config->{verbose};
+	printq info_mess."start" if defined $config->{verbose};
 
 	my $exac_fh = openIN $exac_file;
 	my ($meta_line,$header,$vep_meta_line) = skip_vcf_meta $exac_fh,"CSQ";
@@ -423,6 +397,12 @@ sub insert_exac {
                              VALUES ($v););
 		  $dbh->do($stmt);
 	      }
+
+		my $sql = sprintf "UPDATE %s SET vep_pred = 1 WHERE id = %s",
+		$dbh->quote_identifier($config->{table_name}->{variant}),$dbh->quote($variant_id);
+
+		my $sth = $dbh->prepare($sql);
+		$sth->execute();	
 		
 	    }
 	    $nb_done++;

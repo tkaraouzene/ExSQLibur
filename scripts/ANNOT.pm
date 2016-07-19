@@ -41,6 +41,11 @@ sub ANNOT {
     return $status;
 }
 
+
+
+
+
+
 ##########
 ########
 
@@ -163,11 +168,6 @@ sub annot_vep {
 
 	    my $sth = $dbh->prepare($sql);
 	    $sth->execute();
-
-	    # my $stmt = qq(UPDATE $config->{table_name}->{variant}
-        	      # SET vep_pred = 1 
-		      # WHERE id = \"$variant_id\";);
-	    # my $rv = $dbh->do($stmt);
 
 	    $nb_done ++;
 	}

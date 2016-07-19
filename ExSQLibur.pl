@@ -258,6 +258,7 @@ sub get_option {
 	'fastc=s',                  #
 	'gff_file=s',               #
 	'magic_source=s',           # 
+	'process=s',
 	'add_exome=s',
 	'add_pathology=s',
 	'add_patient=s',

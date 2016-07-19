@@ -446,3 +446,16 @@ sub check_or {
     
     return $status;
 }
+
+sub where_clause {
+
+
+
+
+
+
+
+
+
+
+}
