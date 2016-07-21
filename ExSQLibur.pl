@@ -13,6 +13,8 @@ use ADD qw(ADD);
 use CALL qw(CALL);
 use ANNOT qw(ANNOT);
 
+use backup qw(backup);
+
 print &header;
 # configure from command line opts
 my $config = &configure(\@ARGV);
@@ -26,30 +28,40 @@ sub main {
     my $config = shift;
     printq info_mess."Starting..." unless $config->{quiet};
     
-	if ($config->{mode} eq "NEW") {
-		
-	    &NEW($config);
     
-	} elsif ($config->{mode} eq "ALIGN") {
-		
-	    &ALIGN($config);
+
+
+    &backup($config) if defined $config->{backup};
     
-	}  elsif ($config->{mode} eq "ADD") {
+
+
+    # dieq "aaaaaaaaaaaaaaaaaa" if defined $config->{backup};
+    
+
+    if ($config->{mode} eq "NEW") {
 	
-	    &ADD($config);
+	&NEW($config);
 	
-	}  elsif ($config->{mode} eq "CALL") {
-	    
-	    &CALL($config);
+    } elsif ($config->{mode} eq "ALIGN") {
 	
-	}  elsif ($config->{mode} eq "ANNOT") {
-	    
-	    &ANNOT($config);
+	&ALIGN($config);
 	
-	} else {
+    }  elsif ($config->{mode} eq "ADD") {
 	
-	    dieq error_mess."Unexpected mode: $config->{mode}".&usage;
-	}
+	&ADD($config);
+	
+    }  elsif ($config->{mode} eq "CALL") {
+	
+	&CALL($config);
+	
+    }  elsif ($config->{mode} eq "ANNOT") {
+	
+	&ANNOT($config);
+	
+    } else {
+	
+	dieq error_mess."Unexpected mode: $config->{mode}".&usage;
+    }
     
     printq info_mess."Finished!" unless $config->{quiet};
 }
@@ -85,6 +97,7 @@ sub configure {
     $config->{data_dir} = $pwd."/data";	
     $config->{exac_dir} = $config->{data_dir}."/ExAC";
     $config->{scripts_dir} = $pwd."/scripts";	
+    $config->{backup_dir} = $config->{project_name}."/Backup";
 
     dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
     dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	
@@ -258,6 +271,7 @@ sub get_option {
 	'fastc=s',                  #
 	'gff_file=s',               #
 	'magic_source=s',           # 
+	'backup',
 	'process=s',
 	'add_exome=s',
 	'add_pathology=s',

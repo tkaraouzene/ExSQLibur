@@ -56,7 +56,7 @@ sub NEW {
 
     $dbh->commit();
 
-    &insert_exac_variants($dbh,$config);
+    # &insert_exac_variants($dbh,$config);
 
     $dbh->disconnect();
     
