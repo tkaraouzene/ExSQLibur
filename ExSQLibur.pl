@@ -4,20 +4,20 @@ use strict;
 use warnings;
 use my_warnings qw(get_time dieq printq warnq warn_mess error_mess info_mess);
 use Getopt::Long;
-# use Term::ReadKey;
-use feature qw(say);
 use File::Path qw(rmtree);
 use NEW qw(NEW);
 use ALIGN qw(ALIGN);
 use ADD qw(ADD);
 use CALL qw(CALL);
 use ANNOT qw(ANNOT);
-
+use USAGE qw(USAGE);
 use backup qw(backup);
 
 print &header;
+
 # configure from command line opts
 my $config = &configure(\@ARGV);
+
 # run the main sub routine
 &main($config);
 
@@ -28,15 +28,7 @@ sub main {
     my $config = shift;
     printq info_mess."Starting..." unless $config->{quiet};
     
-    
-
-
-    &backup($config) if defined $config->{backup};
-    
-
-
-    # dieq "aaaaaaaaaaaaaaaaaa" if defined $config->{backup};
-    
+    &backup($config) if defined $config->{backup} and $config->{mode} ne "NEW";
 
     if ($config->{mode} eq "NEW") {
 	
@@ -60,11 +52,15 @@ sub main {
 	
     } else {
 	
-	dieq error_mess."Unexpected mode: $config->{mode}".&usage;
+	dieq error_mess."Unexpected mode: $config->{mode}".&USAGE($config);
     }
     
     printq info_mess."Finished!" unless $config->{quiet};
 }
+
+
+###############
+############
 
 sub configure {
 
@@ -79,15 +75,13 @@ sub configure {
 	
     get_option($config);
 	
-    unless (defined $config->{mode}) {	
-	print &usage;
+    if ((defined $config->{help}) ||
+	(!defined $config->{mode}) ||
+	(!$args)) {	
+	&USAGE($config);
 	die;
     }
-    if((defined $config->{h}) || !$args) {
-	print &usage;
-	die;
-    }
-    
+
     chomp(my $pwd = `pwd`);
     $config->{project_name} =~ s/\/$//;
     $config->{db_dir} = $config->{project_name}."/DB";
@@ -102,19 +96,19 @@ sub configure {
     dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
     dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	
 
-    define_table($config);
+    &define_table($config);
 
     if ($config->{mode} eq "NEW") {
 	
-	unless (defined $config->{project_name}) {
-	
-		print &usage_NEW;
+	if ((defined $config->{h}) ||
+	    (!defined $config->{project_name})) {
+
+	    &USAGE($config);
 	    die;
-	 
 	}
 	
 	# unless ((defined $config->{patient_file}) &&
-			# (defined $config->{patho_file}) &&
+	# (defined $config->{patho_file}) &&
 			# (defined $config->{exome_file})) {
 		
 		# print &usage_NEW;
@@ -148,7 +142,8 @@ sub configure {
 	    unless ((defined $config->{project_name}) &&
 		    (defined $config->{raw_data}) &&
 		    (defined $config->{magic_source})) {
-		print &usage_ALIGN;
+
+		&USAGE($config);
 		die;
 	    }
 	    
@@ -176,14 +171,20 @@ sub configure {
 	}
     
     elsif ($config->{mode} eq "ADD") {
-	unless (defined $config->{project_name}) {
-	    print &usage_ADD;
+	
+	if ((defined $config->{h}) ||
+	    (!defined $config->{project_name})) {
+
+	    &USAGE($config);
 	    die;
 	}
-    } elsif ($config->{mode} eq "CALL") {
 	
-	unless (defined $config->{project_name}) {
-	    print &usage_ADD;
+    } elsif ($config->{mode} eq "CALL") {
+
+	if ((defined $config->{h}) ||
+	    (!defined $config->{project_name})) {
+
+	    &USAGE($config);
 	    die;
 	}
 
@@ -192,8 +193,10 @@ sub configure {
 
     } elsif ($config->{mode} eq "ANNOT") {
 	
-	unless (defined $config->{project_name}) {
-	    print &usage_ANNOT;
+	if ((defined $config->{h}) ||
+	    (!defined $config->{project_name})) {
+	    
+	    &USAGE($config);
 	    die;
 	}
 
@@ -202,11 +205,93 @@ sub configure {
 	dieq error_mess."cannot mkdir $config->{annot_dir}: $!" unless -d $config->{annot_dir} || mkdir $config->{annot_dir};
     }
 	else {
-	dieq error_mess."Unexpected mode: $mode\n".&usage;
+	dieq error_mess."Unexpected mode: $mode\n".&USAGE($config);
     }
     
     return $config;
 }
+
+sub get_option {
+    
+    my $config = shift;
+    
+    GetOptions(
+	$config,
+	'h',                        # print basic usage
+	'help',                     # print compelt usage
+	'verbose|v',                # print out a bit more info while running
+	'quiet|q',                  # print nothing to STDERR
+	'project_name=s',           # 
+	'patho_file=s',             #
+	'exome_file=s',             #
+	'patient_file=s',           #
+	'genome=s',                 #
+	'raw_data=s',               #
+	'fastc=s',                  #
+	'gff_file=s',               #
+	'magic_source=s',           # 
+	'backup',
+	'process=s',
+	'add_exome=s',
+	'add_pathology=s',
+	'add_patient=s',
+	'fork=i',
+	'force_overwrite'           # force overwrite of output file if already exists
+	) or dieq error_mess."unexpected options, type -h or --help for help";
+    
+    return 1;
+}
+
+sub define_table {
+
+	my $config = shift;
+	$config->{table_name}->{pathology} = "Pathology";
+	$config->{table_name}->{variant} = "Variant";
+	$config->{table_name}->{exome} = "Exome";
+	$config->{table_name}->{patient} = "Patient";
+	$config->{table_name}->{carry} = "Carry";
+	$config->{table_name}->{call} = "Call";
+	$config->{table_name}->{gene} = "Gene";
+	$config->{table_name}->{transcript_set} = "Transcript_set";
+	$config->{table_name}->{transcript} = "Transcript";
+	$config->{table_name}->{vep_impact} = "Vep_impact";
+	$config->{table_name}->{vep_csq} = "Vep_consequence";
+	$config->{table_name}->{overlap} = "Overlap";
+	return 1;
+}
+
+sub header {
+    chomp(my $time = &get_time);
+    my $logo =<<END;
+        _
+       (_)       #------------------------------#
+       |=|       #           ExSQLibur          #
+       |=|       #------------------------------#
+   /|__|_|__|\\  
+  (    ( )    )  # created: 
+   \\|\\/\\"/\\/|/   # version:
+     |  Y  |     # author: Thomas Karaouzene
+     |  |  |     # Date : $time
+     |  |  |
+    _|  |  |
+ __/ |  |  |\\
+/  \\ |  |  |  \\
+   __|  |  |   |
+/\\/  |  |  |   |\\
+ <   +\\ |  |\\ />  \\
+  >   + \\  | LJ    |
+        + \\|+  \\  < \\
+  (O)      +    |    )
+   |             \\  /\\ 
+ ( | )   (o)      \\/  )
+_\\\\|//__( | )______)_/ 
+        \\\\|//        
+
+END
+    return $logo;
+}
+
+1;
 
 # sub get_pswd {
 #     my $pswd;
@@ -249,167 +334,3 @@ sub configure {
 #     }
 #     return $pswd;
 # }
-
-sub get_option {
-    
-    my $config = shift;
-    
-    GetOptions(
-	$config,
-	'h',                        # print basic usage
-	'help',                     # print compelt usage
-	'verbose|v',                # print out a bit more info while running
-	'quiet|q',                  # print nothing to STDERR
-	'project_name=s',           # 
-	'user=s',                   #
-	'pswd',                     #
-	'patho_file=s',             #
-	'exome_file=s',             #
-	'patient_file=s',           #
-	'genome=s',                 #
-	'raw_data=s',               #
-	'fastc=s',                  #
-	'gff_file=s',               #
-	'magic_source=s',           # 
-	'backup',
-	'process=s',
-	'add_exome=s',
-	'add_pathology=s',
-	'add_patient=s',
-	'fork=i',
-	'force_overwrite'           # force overwrite of output file if already exists
-	) or dieq error_mess."unexpected options, type -h or --help for help";
-    
-    return 1;
-}
-
-sub define_table {
-
-	my $config = shift;
-	$config->{table_name}->{pathology} = "Pathology";
-	$config->{table_name}->{variant} = "Variant";
-	$config->{table_name}->{exome} = "Exome";
-	$config->{table_name}->{patient} = "Patient";
-	$config->{table_name}->{carry} = "Carry";
-	$config->{table_name}->{call} = "Call";
-	$config->{table_name}->{gene} = "Gene";
-	$config->{table_name}->{transcript_set} = "Transcript_set";
-	$config->{table_name}->{transcript} = "Transcript";
-	$config->{table_name}->{vep_impact} = "Vep_impact";
-	$config->{table_name}->{vep_csq} = "Vep_consequence";
-	$config->{table_name}->{overlap} = "Overlap";
-	return 1;
-}
-
-sub usage {
-
-    my $usage =<<END;
-Usage
-    perl ExSQLibur.pl [mode] [arguments]
-Modes:
-NEW                              #                       
-For more information about the arguments of a mode,
-    perl ExSQLibur.pl your_mode -h
-END
-return $usage;
-}
-
-sub usage_NEW {
-    my $usage =<<END;
-Usage NEW:
-    perl ExSQLibur.pl NEW [arguments]
-Basic options
-=============
---h                              # Display basic usage and quit
---help                           # Display complet usage and quit
--v | --verbose                   # print out a bit more info while running
--q | --quiet                     # print out a bit less info while running
---project_name [dir]             # [required]
---user                           # [required]
---patient_file                   # [required]
---patho_file                     # [required]
---exome_file                     # [required]
---pswd                           #
---force_overwrite                # force overwrite of output file if already exists
-Info : 
-       --force_overwrite WARNING!!! will delete all your outdir if already exists
-END
-return $usage;
-}
-
-sub usage_ALIGN {
-    my $usage =<<END;
-Usage ALIGN:
-    perl ExSQLibur.pl ALIGN [arguments]
-Basic options
-=============
---h                              # Display basic usage and quit
---help                           # Display complet usage and quit
--v | --verbose                   # print out a bit more info while running
--q | --quiet                     # print out a bit less info while running
---project_name [dir]             # [required]
---raw_data [dir]                 # [required] directory containing all raw data you want to align
---fastc [dir]                    # directory containing fastc data
---genome [dir]                   # directory containing human reference genome
---magic_source [dir]             # directory containing human reference genome
---user                           # [required]
---pswd                           #
-Info : 
-       --force_overwrite WARNING!!! will delete all your outdir if already exists
-END
-return $usage;
-}
-
-
-
-sub usage_ANNOT {
-    
-    my $usage =<<END;
-
-Usage ANNOT:
-
-    perl ExSQLibur.pl ANNOT [arguments]
-
-Basic options
-=============
---h                              # Display basic usage and quit
---help                           # Display complet usage and quit
--v | --verbose                   # print out a bit more info while running
--q | --quiet                     # print out a bit less info while running
---project_name [dir]             # [required]
-
-END
-
-return $usage;
-
-}
-
-sub header {
-    chomp(my $time = &get_time);
-    my $logo =<<END;
-        _
-       (_)       #------------------------------#
-       |=|       #           ExSQLibur          #
-       |=|       #------------------------------#
-   /|__|_|__|\\  
-  (    ( )    )  # created: 
-   \\|\\/\\"/\\/|/   # version:
-     |  Y  |     # author: Thomas Karaouzene
-     |  |  |     # Date : $time
-     |  |  |
-    _|  |  |
- __/ |  |  |\\
-/  \\ |  |  |  \\
-   __|  |  |   |
-/\\/  |  |  |   |\\
- <   +\\ |  |\\ />  \\
-  >   + \\  | LJ    |
-        + \\|+  \\  < \\
-  (O)      +    |    )
-   |             \\  /\\ 
- ( | )   (o)      \\/  )
-_\\\\|//__( | )______)_/ 
-        \\\\|//        
-END
-    return $logo;
-}

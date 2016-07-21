@@ -23,13 +23,13 @@ sub ADD {
     my $status = 1;
     my $add;
     
-    printq info_mess."Starting..." if $config->{verbose};
+    printq info_mess."Starting..." unless $config->{quiet};
     
     my $dbh = &connect_database({driver => "SQLite",
 				 db => $config->{db_file},
 				 user => $config->{user},
 				 pswd => $config->{password},
-				 verbose => 1
+				 verbose => $config->{verbose}
 				});
     $dbh->begin_work();
 
@@ -131,7 +131,7 @@ sub ADD {
     $dbh->commit();
     $dbh->disconnect();
 
-    printq info_mess."Finished!" if $config->{verbose};
+    printq info_mess."Finished!" unless $config->{quiet};
 
     return 1;
 }
