@@ -83,15 +83,20 @@ sub configure {
     }
 
     chomp(my $pwd = `pwd`);
-    $config->{project_name} =~ s/\/$//;
-    $config->{db_dir} = $config->{project_name}."/DB";
-    $config->{db} = $config->{db_dir}."/".$config->{project_name};
-    $config->{db_file} = $config->{db}.".db";
-    $config->{align_dir} = $config->{project_name}."/Align_data";
+
+    if ($config->{project_name}) {
+
+	$config->{project_name} =~ s/\/$//;
+	$config->{db_dir} = $config->{project_name}."/DB";
+	$config->{db} = $config->{db_dir}."/".$config->{project_name};
+	$config->{align_dir} = $config->{project_name}."/Align_data";
+	$config->{backup_dir} = $config->{project_name}."/Backup";
+	$config->{db_file} = $config->{db}.".db";
+    }
+
     $config->{data_dir} = $pwd."/data";	
     $config->{exac_dir} = $config->{data_dir}."/ExAC";
     $config->{scripts_dir} = $pwd."/scripts";	
-    $config->{backup_dir} = $config->{project_name}."/Backup";
 
     dieq error_mess."cannot find data directory: $config->{data_dir}" unless -d $config->{data_dir};	
     dieq error_mess."cannot find scripts directory: $config->{scripts_dir}" unless -d $config->{scripts_dir};	

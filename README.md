@@ -25,6 +25,7 @@ perl ExSQLibur NEW \
 
 ```sh 
 perl ExSQLibur ADD \
+  --project_name [your_project_name] \
   --add_exome [file containing exome project info]
 ```
 your Exome file must be tab delimited and have these header line: 
@@ -39,6 +40,7 @@ platform, model place and date fields are requiered
 
 ```sh 
 perl ExSQLibur ADD \
+  --project_name [your_project_name] \
   --add_pathology [file containing pathology description]
 ```
 your Pathology file must also be tab delimited and have these header line:
@@ -53,6 +55,7 @@ name field is requiered
 
 ```sh 
 perl ExSQLibur ADD \
+  --project_name [your_project_name] \
   --add_patient [file containing patient info]
 ```
 ```
@@ -65,8 +68,9 @@ These 3 steps can be performed in one single command
 
  ```
  perl ExSQLibur ADD \
+  --project_name [your_project_name] \
   --add_exome [file containing exome project info] \
-  --add_exome [file containing pathology description] \
+  --add_pathology [file containing pathology description] \
   --add_patient [file containing patient info] \
  ```
 
